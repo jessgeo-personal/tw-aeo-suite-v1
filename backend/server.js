@@ -74,13 +74,13 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    touchAfter: 24 * 3600, // Lazy session update
+    touchAfter: 24 * 3600,
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: true,  // Always true for HTTPS
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'none',  // Changed from 'lax' to 'none' for cross-domain
   },
 }));
 
