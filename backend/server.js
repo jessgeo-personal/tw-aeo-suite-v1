@@ -102,7 +102,7 @@ app.use('/', limiter);
 app.use('/api/auth', authRoutes);
 
 // Usage routes (limits, history, email reports)
-app.use('/api/usage', usageRoutes);
+app.use('/usage', usageRoutes);
 
 // Add with other route registration (around line 85)
 app.use('/subscription', subscriptionRoutes);
