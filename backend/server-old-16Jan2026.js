@@ -42,24 +42,10 @@ connectDB();
 // Security
 app.use(helmet());
 
-// CORS - Allow frontend domain
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'https://aeo.thatworkx.com',
-  'https://tw-aeo-suite-app-aktwv.ondigitalocean.app'
-];
-
+// CORS
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+  //origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: 'http://localhost:3000',
   credentials: true, // Allow cookies
 }));
 
@@ -90,23 +76,23 @@ const limiter = rateLimit({
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Too many requests, please try again later',
 });
-app.use('/', limiter);
+app.use('/api/', limiter);
 
 // ============================================================
 // ROUTES
 // ============================================================
 
 // Auth routes (lead capture, OTP, session)
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Usage routes (limits, history, email reports)
-app.use('/usage', usageRoutes);
+app.use('/api/usage', usageRoutes);
 
 // Add with other route registration (around line 85)
-app.use('/subscription', subscriptionRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Stats route (public - no auth)
-app.use('/stats', statsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // ============================================================
 // ANALYSIS ENDPOINTS (Protected with auth and limits)
@@ -115,7 +101,7 @@ app.use('/stats', statsRoutes);
 /**
  * TOOL 1: Technical AEO Audit
  */
-app.post('/technical', 
+app.post('/api/technical', 
   requireAuth, 
   checkUsageLimit('technical'),
   recordUsage('technical'),
@@ -174,7 +160,7 @@ app.post('/technical',
 /**
  * TOOL 2: Content Quality Analyzer
  */
-app.post('/content', 
+app.post('/api/content', 
   requireAuth, 
   checkUsageLimit('content'),
   recordUsage('content'),
@@ -237,7 +223,7 @@ app.post('/content',
 /**
  * TOOL 3: Query Match Analyzer
  */
-app.post('/query-match', 
+app.post('/api/query-match', 
   requireAuth, 
   checkUsageLimit('query-match'),
   recordUsage('query-match'),
@@ -307,7 +293,7 @@ app.post('/query-match',
 /**
  * TOOL 4: AI Visibility Checker
  */
-app.post('/visibility', 
+app.post('/api/visibility', 
   requireAuth, 
   checkUsageLimit('visibility'),
   recordUsage('visibility'),
@@ -368,7 +354,7 @@ app.post('/visibility',
 // ============================================================
 // Health check
 // ============================================================
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
