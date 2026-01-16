@@ -99,7 +99,7 @@ app.use('/', limiter);
 // ============================================================
 
 // Auth routes (lead capture, OTP, session)
-app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 
 // Usage routes (limits, history, email reports)
 app.use('/usage', usageRoutes);
@@ -309,7 +309,7 @@ app.post('/api/query-match',
 /**
  * TOOL 4: AI Visibility Checker
  */
-app.post('/api/visibility', 
+app.post('/visibility', 
   requireAuth, 
   checkUsageLimit('visibility'),
   recordUsage('visibility'),
