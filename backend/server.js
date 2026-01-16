@@ -108,7 +108,7 @@ app.use('/api/usage', usageRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
 // Stats route (public - no auth)
-app.use('/api/stats', statsRoutes);
+app.use('/stats', statsRoutes);
 
 // ============================================================
 // ANALYSIS ENDPOINTS (Protected with auth and limits)
