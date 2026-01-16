@@ -99,16 +99,16 @@ app.use('/', limiter);
 // ============================================================
 
 // Auth routes (lead capture, OTP, session)
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Usage routes (limits, history, email reports)
-app.use('/usage', usageRoutes);
+app.use('/api/usage', usageRoutes);
 
 // Add with other route registration (around line 85)
-app.use('/subscription', subscriptionRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Stats route (public - no auth)
-app.use('/stats', statsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // ============================================================
 // ANALYSIS ENDPOINTS (Protected with auth and limits)
@@ -117,7 +117,7 @@ app.use('/stats', statsRoutes);
 /**
  * TOOL 1: Technical AEO Audit
  */
-app.post('/technical', 
+app.post('/api/technical', 
   requireAuth, 
   checkUsageLimit('technical'),
   recordUsage('technical'),
@@ -176,7 +176,7 @@ app.post('/technical',
 /**
  * TOOL 2: Content Quality Analyzer
  */
-app.post('/content', 
+app.post('/api/content', 
   requireAuth, 
   checkUsageLimit('content'),
   recordUsage('content'),
@@ -239,7 +239,7 @@ app.post('/content',
 /**
  * TOOL 3: Query Match Analyzer
  */
-app.post('/query-match', 
+app.post('/api/query-match', 
   requireAuth, 
   checkUsageLimit('query-match'),
   recordUsage('query-match'),
@@ -309,7 +309,7 @@ app.post('/query-match',
 /**
  * TOOL 4: AI Visibility Checker
  */
-app.post('/visibility', 
+app.post('/api/visibility', 
   requireAuth, 
   checkUsageLimit('visibility'),
   recordUsage('visibility'),
