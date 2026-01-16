@@ -1,25 +1,64 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
 const cheerio = require('cheerio');
+const https = require('https');
 
-// Fetch a webpage with proper headers and timeout
+// Fetch a webpage with proper headers, SSL handling, and timeout
 async function fetchPage(url, timeout = 30000) {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-    },
-    timeout,
-  });
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      timeout,
+      maxRedirects: 5,
+      validateStatus: (status) => status < 500, // Accept 4xx but not 5xx
+      // Enhanced HTTPS agent for better SSL/TLS compatibility
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: true, // Validate certificates
+        minVersion: 'TLSv1.2',     // Support TLS 1.2+
+        maxVersion: 'TLSv1.3',     // Up to TLS 1.3
+        ciphers: 'DEFAULT@SECLEVEL=1', // More permissive cipher suite
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    if (response.status >= 400) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`);
+    }
+
+    const html = response.data;
+    const $ = cheerio.load(html);
+    
+    return { html, $, response };
+
+  } catch (error) {
+    // Provide more helpful error messages
+    if (error.code === 'EPROTO' || error.code === 'ERR_SSL_PROTOCOL_ERROR') {
+      throw new Error(`SSL/TLS handshake failed for ${url}. The website may have strict security settings or be blocking automated requests.`);
+    }
+    if (error.code === 'ECONNREFUSED') {
+      throw new Error(`Connection refused to ${url}. The server may be down or blocking requests.`);
+    }
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+      throw new Error(`Request timeout for ${url}. The server took too long to respond.`);
+    }
+    if (error.response) {
+      throw new Error(`HTTP ${error.response.status}: ${error.response.statusText || 'Request failed'}`);
+    }
+    throw error;
   }
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-  
-  return { html, $, response };
 }
 
 // Extract all schema markup from a page

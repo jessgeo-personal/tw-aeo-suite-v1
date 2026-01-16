@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  CreditCard, Check, X, Zap, Users, BarChart, 
-  Clock, TrendingUp, Shield, AlertCircle, ChevronRight 
+  Check, X, Zap, Users, BarChart, 
+  Clock, TrendingUp, Shield, ChevronRight 
 } from 'lucide-react';
 
 // ============================================
 // PRICING & UPGRADE MODAL
 // ============================================
 
-const PricingModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
+const PricingModal = ({ isOpen, onClose, currentPlan = 'free', onOpenUpgradeModal, onOpenProfessionalModal, initialTab = 'self-service' }) => {
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly, semi-annual, annual
-  const [showProServices, setShowProServices] = useState(false);
+  const [showProServices, setShowProServices] = useState(initialTab === 'professional');
+
+  // Reset tab when modal opens - MUST be before any conditional returns
+  useEffect(() => {
+    if (isOpen) {
+      setShowProServices(initialTab === 'professional');
+    }
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
@@ -20,8 +27,8 @@ const PricingModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
   };
 
   const handleContactProServices = (service) => {
-    // TODO: Create contact form submission
-    alert(`Professional Services - ${service}\n\nContact form coming soon!`);
+    onOpenProfessionalModal?.();
+    onClose();
   };
 
   return (
@@ -77,6 +84,8 @@ const PricingModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
               setBillingCycle={setBillingCycle}
               currentPlan={currentPlan}
               onUpgrade={handleUpgrade}
+              onOpenUpgradeModal={onOpenUpgradeModal}
+              onClose={onClose}
             />
           ) : (
             <ProfessionalServices onContact={handleContactProServices} />
@@ -105,7 +114,7 @@ const PricingModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
 // SUBSCRIPTION PLANS
 // ============================================
 
-const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgrade }) => {
+const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgrade, onOpenUpgradeModal, onClose }) => {
   const plans = {
     monthly: {
       price: 20,
@@ -114,10 +123,10 @@ const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgra
       savings: null
     },
     'semi-annual': {
-      price: 17,
+      price: 18,
       period: 'month',
-      total: 102,
-      savings: '15% off',
+      total: 108,
+      savings: '10% off',
       popular: true
     },
     annual: {
@@ -149,6 +158,17 @@ const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgra
 
   return (
     <div>
+      {/* Coming Soon Banner */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+        <Clock className="w-6 h-6 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-amber-800">Payment Processing Coming Soon</p>
+          <p className="text-sm text-amber-700">
+            We're finalizing our payment system. Upgrade functionality will be available shortly.
+          </p>
+        </div>
+      </div>
+
       {/* Billing Cycle Toggle */}
       <div className="flex justify-center mb-8">
         <div className="inline-flex bg-gray-100 rounded-lg p-1">
@@ -172,7 +192,7 @@ const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgra
           >
             6 Months
             <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-              15% off
+              10% off
             </span>
           </button>
           <button
@@ -273,20 +293,15 @@ const SubscriptionPlans = ({ billingCycle, setBillingCycle, currentPlan, onUpgra
               </li>
             ))}
           </ul>
-
           <button
-            onClick={() => onUpgrade('unlimited', billingCycle)}
-            disabled={currentPlan !== 'free'}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            onClick={() => {
+              onOpenUpgradeModal?.();
+              onClose();
+            }}
+            className="w-full py-3 px-4 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
           >
-            {currentPlan === 'free' ? (
-              <>
-                <Zap className="w-5 h-5" />
-                Upgrade Now
-              </>
-            ) : (
-              'Current Plan'
-            )}
+            Get Started
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>

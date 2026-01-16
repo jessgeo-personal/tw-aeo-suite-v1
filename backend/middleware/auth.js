@@ -56,25 +56,22 @@ function checkUsageLimit(toolName) {
       // Get the limit for this specific tool
       const dailyLimit = getDailyLimit(toolName);
 
-      // Get Dubai timezone date (UTC+4)
-      const dubaiDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
-      const todayStart = new Date(dubaiDate.setHours(0, 0, 0, 0));
-      const todayEnd = new Date(dubaiDate.setHours(23, 59, 59, 999));
+      // Get Dubai date string (YYYY-MM-DD)
+      const todayDate = Usage.getDubaiDateString();
 
       // Count usage for this tool today
       const usageCount = await Usage.countDocuments({
         email: user.email,
         tool: toolName,
-        timestamp: {
-          $gte: todayStart,
-          $lte: todayEnd
-        }
+        date: todayDate
       });
 
       // Check if limit reached
       if (usageCount >= dailyLimit) {
-        const resetTime = new Date(todayEnd);
-        resetTime.setHours(24, 0, 0, 0); // Next midnight Dubai time
+        // Calculate next midnight Dubai time
+        const dubaiNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+        const resetTime = new Date(dubaiNow);
+        resetTime.setHours(24, 0, 0, 0);
 
         return res.status(429).json({
           error: 'Daily limit reached',
@@ -130,15 +127,13 @@ function recordUsage(toolName) {
               return;
             }
 
-            const usage = new Usage({
-              email: user.email,
-              tool: toolName,
-              url: req.body.url,
-              timestamp: new Date(),
-              results: data
-            });
-
-            await usage.save();
+            await Usage.recordUsage(
+              userId,
+              user.email,
+              toolName,
+              req.body.url,
+              data
+            );
             console.log(`✓ Usage recorded: ${toolName} by ${user.email}`);
           } catch (error) {
             console.error(`[${toolName}] Record usage error:`, error.message);
@@ -165,10 +160,8 @@ const getUsageLimits = async (req, res) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    // Get Dubai timezone date
-    const dubaiDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
-    const todayStart = new Date(dubaiDate.setHours(0, 0, 0, 0));
-    const todayEnd = new Date(dubaiDate.setHours(23, 59, 59, 999));
+    // Get Dubai date string (YYYY-MM-DD)
+    const todayDate = Usage.getDubaiDateString();
 
     const tools = ['technical', 'content', 'query-match', 'visibility'];
     const limits = {};
@@ -180,18 +173,20 @@ const getUsageLimits = async (req, res) => {
       const usageCount = await Usage.countDocuments({
         email: user.email,
         tool: tool,
-        timestamp: {
-          $gte: todayStart,
-          $lte: todayEnd
-        }
+        date: todayDate
       });
 
+      // Calculate next midnight Dubai time for reset
+      const dubaiNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+      const nextMidnight = new Date(dubaiNow);
+      nextMidnight.setHours(24, 0, 0, 0);
+      
       limits[tool] = {
         used: usageCount,
         limit: dailyLimit,
         remaining: dailyLimit - usageCount,
         canUse: usageCount < dailyLimit,
-        resetAt: new Date(todayEnd.getTime() + 24 * 60 * 60 * 1000).toISOString() // Next midnight
+        resetAt: nextMidnight.toISOString()
       };
     }
 

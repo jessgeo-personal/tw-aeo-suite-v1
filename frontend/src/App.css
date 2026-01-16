@@ -1,23 +1,6 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* Remove global resets - Tailwind handles this */
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-/* Smooth transitions */
+/* Smooth transitions for buttons and links */
 button, a {
   transition: all 0.2s ease-in-out;
 }
@@ -41,19 +24,8 @@ button, a {
   background: #555;
 }
 
-/* Loading animation */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
 /* ============================================ */
-/* MODAL STYLES */
+/* MODAL STYLES (for dashboard modals) */
 /* ============================================ */
 
 .modal-overlay {
@@ -71,12 +43,8 @@ button, a {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
@@ -190,19 +158,6 @@ button, a {
   margin-bottom: 16px;
 }
 
-.success-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  color: #166534;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
 .submit-button {
   width: 100%;
   padding: 14px 24px;
@@ -224,11 +179,6 @@ button, a {
 .submit-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-}
-
-.submit-button:active:not(:disabled) {
-  transform: translateY(0);
 }
 
 .submit-button:disabled {
@@ -237,10 +187,7 @@ button, a {
   box-shadow: none;
 }
 
-/* ============================================ */
-/* OTP MODAL SPECIFIC STYLES */
-/* ============================================ */
-
+/* OTP Modal */
 .otp-info {
   text-align: center;
   margin-bottom: 24px;
@@ -268,67 +215,15 @@ button, a {
   color: #d1d5db;
 }
 
-/* ============================================ */
-/* USAGE LIMITS DISPLAY */
-/* ============================================ */
-
-.usage-limits-bar {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-
-.usage-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.usage-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.usage-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e0f2fe;
-}
-
-/* ============================================ */
-/* RESPONSIVE DESIGN */
-/* ============================================ */
-
+/* Responsive */
 @media (max-width: 640px) {
   .form-row {
     grid-template-columns: 1fr;
-    gap: 0;
   }
   
   .modal-content {
     max-width: 95%;
     margin: 20px;
-  }
-  
-  .modal-header {
-    padding: 20px 20px 12px 20px;
-  }
-  
-  .modal-body {
-    padding: 20px;
-  }
-
-  .usage-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .otp-input {

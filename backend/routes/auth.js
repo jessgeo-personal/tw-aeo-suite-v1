@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const OTP = require('../models/OTP');
+const Stats = require('../models/Stats');
 const { sendOTPEmail } = require('../services/email');
 const { createOrUpdateContact } = require('../services/hubspot');
 
@@ -16,7 +17,7 @@ const { createOrUpdateContact } = require('../services/hubspot');
  */
 router.post('/submit-lead', async (req, res) => {
   try {
-    const { firstName, lastName, email, country, phoneNumber } = req.body;
+    const { email, country, firstName, lastName, leadInterest, phoneNumber } = req.body;
     
     // Validation
     if (!email || !country) {
@@ -68,6 +69,7 @@ router.post('/submit-lead', async (req, res) => {
         lastName: user.lastName,
         country: user.country,
         phoneNumber: user.phoneNumber,
+        lead_interest: leadInterest || 'AEO Tools Test',
       })
         .then(result => {
           if (result.success && result.contactId) {
@@ -150,6 +152,12 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
     
+    // Track first-time login for stats
+    const isFirstLogin = !user.lastSeen || user.lastSeen.getTime() === user.createdAt.getTime();
+    if (isFirstLogin) {
+      Stats.incrementUsers().catch(err => console.error('Stats tracking error:', err));
+    }
+
     // Update last seen
     user.updateLastSeen();
     

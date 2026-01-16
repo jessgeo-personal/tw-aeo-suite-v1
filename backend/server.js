@@ -14,6 +14,8 @@ const authRoutes = require('./routes/auth');
 const usageRoutes = require('./routes/usage');
 // Add with other route imports (around line 14)
 const subscriptionRoutes = require('./routes/subscription');
+const statsRoutes = require('./routes/stats');
+const Stats = require('./models/Stats');
 
 // Middleware
 const { requireAuth, checkUsageLimit, recordUsage } = require('./middleware/auth');
@@ -40,9 +42,24 @@ connectDB();
 // Security
 app.use(helmet());
 
-// CORS
+// CORS - Allow frontend domain
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'https://aeo.thatworkx.com',
+  'https://tw-aeo-suite-app-aktwv.ondigitalocean.app'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true, // Allow cookies
 }));
 
@@ -88,6 +105,9 @@ app.use('/api/usage', usageRoutes);
 // Add with other route registration (around line 85)
 app.use('/api/subscription', subscriptionRoutes);
 
+// Stats route (public - no auth)
+app.use('/api/stats', statsRoutes);
+
 // ============================================================
 // ANALYSIS ENDPOINTS (Protected with auth and limits)
 // ============================================================
@@ -115,6 +135,8 @@ app.post('/api/technical',
       
       console.log(`[Technical Audit] Complete. Score: ${results.overallScore}/100`);
       
+      // Increment stats counter
+      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
       res.json({
         tool: 'Technical AEO Audit',
         url: targetUrl,
@@ -124,9 +146,25 @@ app.post('/api/technical',
 
     } catch (error) {
       console.error('[Technical Audit] Error:', error.message);
-      res.status(500).json({ 
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message;
+      let statusCode = 500;
+      
+      if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
+        statusCode = 400;
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        errorMessage = 'The website took too long to respond. Please try again.';
+        statusCode = 504;
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. The website may be down or blocking requests.';
+        statusCode = 503;
+      }
+      
+      res.status(statusCode).json({ 
         error: 'Analysis failed',
-        message: error.message,
+        message: errorMessage,
         url 
       });
     }
@@ -156,6 +194,11 @@ app.post('/api/content',
       
       console.log(`[Content Analysis] Complete. Score: ${results.overallScore}/100`);
       
+      Stats.incrementAnalyses().catch(err => console.error('Stats error:', err));
+
+      // Increment stats counter
+      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
+
       res.json({
         tool: 'Content Quality Analyzer',
         url: targetUrl,
@@ -165,12 +208,29 @@ app.post('/api/content',
 
     } catch (error) {
       console.error('[Content Analysis] Error:', error.message);
-      res.status(500).json({ 
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message;
+      let statusCode = 500;
+      
+      if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
+        statusCode = 400;
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        errorMessage = 'The website took too long to respond. Please try again.';
+        statusCode = 504;
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. The website may be down or blocking requests.';
+        statusCode = 503;
+      }
+      
+      res.status(statusCode).json({ 
         error: 'Analysis failed',
-        message: error.message,
+        message: errorMessage,
         url 
       });
     }
+    
   }
 );
 
@@ -207,6 +267,8 @@ app.post('/api/query-match',
       
       console.log(`[Query Match] Complete. Overall Match: ${results.overallScore}/100`);
       
+      // Increment stats counter
+      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
       res.json({
         tool: 'Query Match Analyzer',
         url: targetUrl,
@@ -216,12 +278,29 @@ app.post('/api/query-match',
 
     } catch (error) {
       console.error('[Query Match] Error:', error.message);
-      res.status(500).json({ 
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message;
+      let statusCode = 500;
+      
+      if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
+        statusCode = 400;
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        errorMessage = 'The website took too long to respond. Please try again.';
+        statusCode = 504;
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. The website may be down or blocking requests.';
+        statusCode = 503;
+      }
+      
+      res.status(statusCode).json({ 
         error: 'Analysis failed',
-        message: error.message,
+        message: errorMessage,
         url 
       });
     }
+
   }
 );
 
@@ -248,6 +327,9 @@ app.post('/api/visibility',
       
       console.log(`[Visibility Check] Complete. Score: ${results.overallScore}/100`);
       
+      // Increment stats counter
+      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
+      
       res.json({
         tool: 'AI Visibility Checker',
         url: targetUrl,
@@ -257,12 +339,29 @@ app.post('/api/visibility',
 
     } catch (error) {
       console.error('[Visibility Check] Error:', error.message);
-      res.status(500).json({ 
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message;
+      let statusCode = 500;
+      
+      if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
+        statusCode = 400;
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        errorMessage = 'The website took too long to respond. Please try again.';
+        statusCode = 504;
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. The website may be down or blocking requests.';
+        statusCode = 503;
+      }
+      
+      res.status(statusCode).json({ 
         error: 'Analysis failed',
-        message: error.message,
+        message: errorMessage,
         url 
       });
     }
+
   }
 );
 
