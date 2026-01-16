@@ -105,7 +105,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usage', usageRoutes);
 
 // Add with other route registration (around line 85)
-app.use('/api/subscription', subscriptionRoutes);
+app.use('/subscription', subscriptionRoutes);
 
 // Stats route (public - no auth)
 app.use('/stats', statsRoutes);
