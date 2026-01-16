@@ -30,6 +30,8 @@ const { analyzeVisibility } = require('./analyzers/visibility');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - CRITICAL for DigitalOcean
+app.set('trust proxy', 1);
 // ============================================================
 // DATABASE CONNECTION
 // ============================================================
