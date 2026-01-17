@@ -25,11 +25,10 @@ const api = {
       const res = await fetch(`${API_URL}/api/auth/session`, { credentials: 'include' });
       if (!res.ok) return null;
       const data = await res.json();
-      // Only return session if actually authenticated, and normalize the structure
       if (data.authenticated && data.user) {
         return {
           ...data,
-          email: data.user.email,  // Flatten email for easy access
+          email: data.user.email,
           firstName: data.user.firstName,
           lastName: data.user.lastName,
         };
@@ -63,7 +62,17 @@ const api = {
       const error = await res.json();
       throw new Error(error.message || 'Invalid OTP');
     }
-    return res.json();
+    const data = await res.json();
+    // Normalize the response - flatten user data for easy access
+    if (data.success && data.user) {
+      return {
+        ...data,
+        email: data.user.email,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+      };
+    }
+    return data;
   },
   resendOTP: async (email) => {
     const res = await fetch(`${API_URL}/api/auth/resend-otp`, {
@@ -234,7 +243,8 @@ export default function App() {
       
       if (autoAnalyzeAfterAuth && pendingUrl) {
         setUrl(pendingUrl);
-        setTimeout(() => handleAnalyze(pendingUrl), 300);
+        // Pass skipAuthCheck=true to bypass the session check since we just authenticated
+        setTimeout(() => handleAnalyze(pendingUrl, true), 300);
       }
       
       setAutoAnalyzeAfterAuth(false);
@@ -266,8 +276,8 @@ export default function App() {
   // ===========================================
   // ANALYSIS HANDLERS
   // ===========================================
-  const handleAnalyze = async (targetUrl = url) => {
-    if (!session) {
+  const handleAnalyze = async (targetUrl = url, skipAuthCheck = false) => {
+    if (!session && !skipAuthCheck) {
       setShowLeadModal(true);
       return;
     }

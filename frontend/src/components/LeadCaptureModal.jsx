@@ -19,7 +19,7 @@ const countries = [
  * Email and Country are required (shown first)
  * First Name, Last Name, Phone are optional
  */
-export const LeadCaptureModal = ({ onSubmit, onClose, loading, error, url }) => {
+export const LeadCaptureModal = ({ onSubmit, onClose, loading, error, url,minimal = true }) => {
   const [formData, setFormData] = useState({
     email: '',
     country: '',
@@ -126,57 +126,59 @@ export const LeadCaptureModal = ({ onSubmit, onClose, loading, error, url }) => 
           </div>
 
           {/* Optional Fields - Collapsible section heading */}
-          <div className="pt-2">
-            <p className="text-xs text-gray-500 mb-3">Optional information</p>
+          {!minimal && (
+            <div className="pt-2">
+              <p className="text-xs text-gray-500 mb-3">Optional information</p>
             
             {/* Name Row */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                  <User className="w-4 h-4" />
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={(e) => updateField('firstName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={loading}
-                />
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+                    <User className="w-4 h-4" />
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) => updateField('firstName', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+                    <User className="w-4 h-4" />
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) => updateField('lastName', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={loading}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                  <User className="w-4 h-4" />
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={(e) => updateField('lastName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={loading}
-                />
-              </div>
-            </div>
 
-            {/* Phone */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                <Phone className="w-4 h-4" />
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="+971 50 123 4567"
-                value={formData.phoneNumber}
-                onChange={(e) => updateField('phoneNumber', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              />
+              {/* Phone */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+                  <Phone className="w-4 h-4" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="+971 50 123 4567"
+                  value={formData.phoneNumber}
+                  onChange={(e) => updateField('phoneNumber', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Error Display */}
           {(validationError || error) && (
