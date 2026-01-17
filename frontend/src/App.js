@@ -23,7 +23,18 @@ const api = {
   checkSession: async () => {
     try {
       const res = await fetch(`${API_URL}/api/auth/session`, { credentials: 'include' });
-      return res.ok ? await res.json() : null;
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Only return session if actually authenticated, and normalize the structure
+      if (data.authenticated && data.user) {
+        return {
+          ...data,
+          email: data.user.email,  // Flatten email for easy access
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+        };
+      }
+      return null;
     } catch (e) {
       return null;
     }

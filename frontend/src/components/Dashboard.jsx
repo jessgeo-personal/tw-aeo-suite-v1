@@ -349,7 +349,7 @@ const Dashboard = ({
         {/* Logo */}
         <div className="px-4 mb-6">
           <h1 className="text-xl font-bold">
-            <img src="/AEO-thatwork-logo.svg" alt="" className="h-10 w-auto" />
+            <img src="" alt="" className="h-10 w-auto" />
           </h1>
         </div>
 
