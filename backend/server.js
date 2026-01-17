@@ -117,7 +117,7 @@ app.use('/stats', statsRoutes);
 /**
  * TOOL 1: Technical AEO Audit
  */
-app.post('/api/technical', 
+app.post('/technical', 
   requireAuth, 
   checkUsageLimit('technical'),
   recordUsage('technical'),
@@ -176,7 +176,7 @@ app.post('/api/technical',
 /**
  * TOOL 2: Content Quality Analyzer
  */
-app.post('/api/content', 
+app.post('/content', 
   requireAuth, 
   checkUsageLimit('content'),
   recordUsage('content'),
@@ -239,7 +239,7 @@ app.post('/api/content',
 /**
  * TOOL 3: Query Match Analyzer
  */
-app.post('/api/query-match', 
+app.post('/query-match', 
   requireAuth, 
   checkUsageLimit('query-match'),
   recordUsage('query-match'),
