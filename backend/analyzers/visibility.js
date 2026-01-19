@@ -1,40 +1,40 @@
 // ========================================
 // RECOMMENDATION ENHANCEMENTS
 // ========================================
-const enhancements = {
-  'Improve freshness': {
-    context: 'AI engines favor recently updated content.',
-    example: 'The Verge started adding "Updated [Date]" and refreshing monthly - citations increased 40%.',
-    reference: 'Content updated within 90 days is 2x more likely to be cited.'
-  },
-  'Increase authority': {
-    context: 'AI engines cite sources that demonstrate deep expertise.',
-    example: 'Healthline published 200+ interconnected health articles and became top medical source.',
-    reference: 'Sites with 10+ related articles on a topic are 6x more likely to be cited as authorities.'
-  },
-  'Add author bylines': {
-    context: 'AI engines trust content with identifiable, real authors.',
-    example: 'After Forbes added detailed author bios, their citation rate increased 30%.',
-    reference: 'Content with author bylines is perceived as 55% more trustworthy by AI.'
-  }
-};
+//const enhancements = {
+  //'Improve freshness': {
+  //context: 'AI engines favor recently updated content.',
+  //example: 'The Verge started adding "Updated [Date]" and refreshing monthly - citations increased 40%.',
+  //reference: 'Content updated within 90 days is 2x more likely to be cited.'
+  //},
+  //'Increase authority': {
+  //  context: 'AI engines cite sources that demonstrate deep expertise.',
+  //  example: 'Healthline published 200+ interconnected health articles and became top medical source.',
+  //  reference: 'Sites with 10+ related articles on a topic are 6x more likely to be cited as authorities.'
+  //},
+  //'Add author bylines': {
+  //  context: 'AI engines trust content with identifiable, real authors.',
+  //  example: 'After Forbes added detailed author bios, their citation rate increased 30%.',
+  //  reference: 'Content with author bylines is perceived as 55% more trustworthy by AI.'
+  //}
+//};
 
-function enhanceRecommendation(rec) {
+//function enhanceRecommendation(rec) {
   // Find matching enhancement
-  const matchKey = Object.keys(enhancements).find(key => 
-    rec.issue?.toLowerCase().includes(key.toLowerCase()) ||
-    rec.action?.toLowerCase().includes(key.toLowerCase())
-  );
+//  const matchKey = Object.keys(enhancements).find(key => 
+//    rec.issue?.toLowerCase().includes(key.toLowerCase()) ||
+//    rec.action?.toLowerCase().includes(key.toLowerCase())
+//  );
   
-  if (matchKey && enhancements[matchKey]) {
-    return {
-      ...rec,
-      ...enhancements[matchKey]
-    };
-  }
+//  if (matchKey && enhancements[matchKey]) {
+//    return {
+//      ...rec,
+//      ...enhancements[matchKey]
+//    };
+//  }
   
-  return rec;
-}
+//  return rec;
+//}
 
 /**
  * TOOL 4: AI Visibility Checker
@@ -43,6 +43,7 @@ function enhanceRecommendation(rec) {
  */
 
 const { extractSchemas, extractMeta, extractContent, findQuestionContent, calculateReadability } = require('../utils');
+const { enhanceRecommendation } = require('../utils/recommendation-enhancer');
 
 function analyzeVisibility($, url) {
   const content = extractContent($);
@@ -137,7 +138,7 @@ function analyzeVisibility($, url) {
     authority,
     freshness,
     entities,
-    recommendations: recommendations.map(enhanceRecommendation),  // <-- Add .map()
+    recommendations: recommendations.map(rec => enhanceRecommendation(rec, 'visibility')),
     quickWins,
     pageInfo: {
       title: meta.title,
