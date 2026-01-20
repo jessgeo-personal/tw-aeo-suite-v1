@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 /**
  * Stats Banner - Shows live analysis and user count
@@ -23,7 +24,7 @@ const StatsBanner = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/stats`);
+      const response = await fetch(`${API_URL}/api/stats`);
       if (response.ok) {
         const data = await response.json();
         setStats(data);

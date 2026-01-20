@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // Import components
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
-import { LeadCaptureModal, OTPModal } from './components/LeadCaptureModal';
+import { LeadCaptureModal, LoginModal, OTPModal } from './components/LeadCaptureModal';
 import PricingModal from './components/PricingModal';
 import FairUsePolicyModal from './components/FairUsePolicyModal';
 import ContactModal from './components/ContactModal';
@@ -12,9 +12,10 @@ import UpgradeInterestModal from './components/UpgradeInterestModal';
 import ProfessionalServicesModal from './components/ProfessionalServicesModal';
 
 import './App.css';
+import { API_URL } from './config/api';
 
-// API URL from environment variable with fallback
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+console.log('[App] Environment:', process.env.NODE_ENV);
+console.log('[App] API_URL:', API_URL || '(using proxy)');
 
 // ===========================================
 // API HELPER FUNCTIONS
@@ -50,6 +51,20 @@ const api = {
       throw new Error(error.message || 'Failed to submit');
     }
     return res.json();
+  },
+  // Login-only endpoint (for existing users)
+  loginUser: async (email) => {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || data.error || 'User not found. Please register first.');
+    }
+    return data;
   },
   verifyOTP: async (email, otp) => {
     const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
@@ -118,8 +133,11 @@ const api = {
     const data = await res.json();
     
     if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('SESSION_EXPIRED');
+      }
       if (res.status === 429) {
-        throw new Error('Daily limit reached. Please upgrade for unlimited analyses.');
+        throw new Error('LIMIT_REACHED');
       }
       throw new Error(data.message || data.error || 'Analysis failed');
     }
@@ -141,6 +159,7 @@ export default function App() {
   
   // Modal States
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showFairUseModal, setShowFairUseModal] = useState(false);
@@ -159,8 +178,15 @@ export default function App() {
   const [url, setUrl] = useState('');
   const [queries, setQueries] = useState(['', '', '']);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  
+  // CHANGED: Results stored per tool (each tool remembers its last result)
+  const [toolResults, setToolResults] = useState({
+    technical: null,
+    content: null,
+    query: null,
+    visibility: null
+  });
   
   // URL Tabs State
   const [urlTabs, setUrlTabs] = useState([]);
@@ -203,7 +229,7 @@ export default function App() {
       setPendingUrl(landingUrl);
       setUrl(landingUrl);
       setAutoAnalyzeAfterAuth(true);
-      setShowLeadModal(true);
+      setShowLeadModal(true);  // Show registration modal for new users
     } else {
       setUrl(landingUrl);
       setShowLanding(false);
@@ -211,12 +237,29 @@ export default function App() {
     }
   };
 
+  // Open login modal (existing users)
   const handleLoginClick = () => {
     setPendingUrl('');
     setAutoAnalyzeAfterAuth(false);
+    setAuthError('');
+    setShowLoginModal(true);
+  };
+
+  // Switch from registration to login modal
+  const handleSwitchToLogin = () => {
+    setShowLeadModal(false);
+    setAuthError('');
+    setShowLoginModal(true);
+  };
+
+  // Switch from login to registration modal
+  const handleSwitchToRegister = () => {
+    setShowLoginModal(false);
+    setAuthError('');
     setShowLeadModal(true);
   };
 
+  // Handle registration form submission
   const handleLeadSubmit = async (formData) => {
     setAuthLoading(true);
     setAuthError('');
@@ -224,6 +267,22 @@ export default function App() {
       await api.submitLead(formData);
       setPendingEmail(formData.email);
       setShowLeadModal(false);
+      setShowOTPModal(true);
+    } catch (e) {
+      setAuthError(e.message);
+    }
+    setAuthLoading(false);
+  };
+
+  // Handle login form submission (email only)
+  const handleLoginSubmit = async (formData) => {
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      // Try to login - this will send OTP to existing user
+      await api.loginUser(formData.email);
+      setPendingEmail(formData.email);
+      setShowLoginModal(false);
       setShowOTPModal(true);
     } catch (e) {
       setAuthError(e.message);
@@ -268,53 +327,104 @@ export default function App() {
     await api.logout();
     setSession(null);
     setLimits(null);
-    setResults(null);
-    setUrlTabs([]);
+    // Clear all tool results on logout
+    setToolResults({
+      technical: null,
+      content: null,
+      query: null,
+      visibility: null
+    });
     setShowLanding(true);
   };
 
   // ===========================================
-  // ANALYSIS HANDLERS
+  // ANALYSIS HANDLER - UPDATED
   // ===========================================
-  const handleAnalyze = async (targetUrl = url, skipAuthCheck = false) => {
-    if (!session && !skipAuthCheck) {
-      setShowLeadModal(true);
+  const handleAnalyze = async (urlOverride = null, skipAuthCheck = false) => {
+    const targetUrl = urlOverride || url;
+    
+    if (!targetUrl.trim()) {
+      setError('Please enter a URL');
       return;
     }
 
-    if (!targetUrl.trim()) return;
+    // Check limits before proceeding
+    if (session && limits) {
+      const toolKey = activeTool === 'query' ? 'query-match' : activeTool;
+      const toolLimit = limits.limits?.[toolKey];
+      if (toolLimit && toolLimit.remaining <= 0) {
+        // Show upgrade modal when limit reached
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+
+    if (!session && !skipAuthCheck) {
+      setPendingUrl(targetUrl);
+      setAutoAnalyzeAfterAuth(true);
+      setShowLeadModal(true);  // Show registration modal
+      return;
+    }
 
     setLoading(true);
     setError(null);
-    
+
     try {
-      const data = await api.analyze(activeTool, targetUrl, queries);
-      setResults(data);
-      await loadLimits();
+      const result = await api.analyze(activeTool, targetUrl, queries);
       
+      // CHANGED: Store result for the current tool
+      setToolResults(prev => ({
+        ...prev,
+        [activeTool]: result
+      }));
+      
+      await loadLimits();
+
       // Update tabs
-      const existingTab = urlTabs.findIndex(tab => tab.url === targetUrl);
-      if (existingTab === -1) {
-        setUrlTabs([...urlTabs, { url: targetUrl, tool: activeTool, results: data }]);
-        setActiveTabIndex(urlTabs.length);
-      } else {
+      const existingTabIndex = urlTabs.findIndex(t => t.url === targetUrl && t.tool === activeTool);
+      if (existingTabIndex >= 0) {
         const newTabs = [...urlTabs];
-        newTabs[existingTab] = { url: targetUrl, tool: activeTool, results: data };
+        newTabs[existingTabIndex] = { url: targetUrl, tool: activeTool, results: result };
         setUrlTabs(newTabs);
-        setActiveTabIndex(existingTab);
+        setActiveTabIndex(existingTabIndex);
+      } else {
+        const newTab = { url: targetUrl, tool: activeTool, results: result };
+        setUrlTabs([...urlTabs, newTab]);
+        setActiveTabIndex(urlTabs.length);
       }
+
     } catch (e) {
-      // User-friendly error messages
+      console.error('Analysis error:', e);
+      
+      // Handle session expiration
+      if (e.message === 'SESSION_EXPIRED') {
+        setSession(null);
+        setError('Your session has expired. Please log in again.');
+        setPendingUrl(targetUrl);
+        setAutoAnalyzeAfterAuth(true);
+        setShowLoginModal(true);
+        setLoading(false);
+        return;
+      }
+
+      // Handle limit reached
+      if (e.message === 'LIMIT_REACHED') {
+        setShowUpgradeModal(true);
+        setLoading(false);
+        return;
+      }
+      
       let errorMessage = 'Analysis failed. Please try again.';
       
-      if (e.message.includes('SSL') || e.message.includes('EPROTO')) {
-        errorMessage = 'Unable to connect to this website. The site may be blocking automated requests or have connection issues.';
+      if (e.message.includes('ENOTFOUND') || e.message.includes('find this website')) {
+        errorMessage = 'Unable to reach this website. Please check the URL is correct and includes the full domain.';
       } else if (e.message.includes('timeout') || e.message.includes('ETIMEDOUT')) {
         errorMessage = 'The website took too long to respond. Please try again or use a different URL.';
       } else if (e.message.includes('404') || e.message.includes('not found')) {
         errorMessage = 'Website not found. Please check the URL and try again.';
       } else if (e.message.includes('limit')) {
         errorMessage = 'Daily limit reached. Please upgrade for unlimited analyses.';
+        setShowUpgradeModal(true);
       } else if (e.message) {
         errorMessage = e.message;
       }
@@ -324,12 +434,25 @@ export default function App() {
     setLoading(false);
   };
 
+  // ===========================================
+  // TOOL CHANGE HANDLER - NEW
+  // ===========================================
+  const handleToolChange = (newTool) => {
+    setActiveTool(newTool);
+    setError(null); // Clear any errors when switching tools
+    // Results will automatically update via toolResults[activeTool]
+  };
+
   const handleTabClick = (idx) => {
     setActiveTabIndex(idx);
     const tab = urlTabs[idx];
     if (tab) {
       setUrl(tab.url);
-      setResults(tab.results);
+      setActiveTool(tab.tool);
+      setToolResults(prev => ({
+        ...prev,
+        [tab.tool]: tab.results
+      }));
     }
   };
 
@@ -342,17 +465,31 @@ export default function App() {
       const tab = newTabs[newIdx];
       if (tab) {
         setUrl(tab.url);
-        setResults(tab.results);
+        setActiveTool(tab.tool);
+        setToolResults(prev => ({
+          ...prev,
+          [tab.tool]: tab.results
+        }));
       }
     } else if (newTabs.length === 0) {
       setUrl('');
-      setResults(null);
+      setToolResults({
+        technical: null,
+        content: null,
+        query: null,
+        visibility: null
+      });
     }
   };
 
   const handleNewTab = () => {
     setUrl('');
-    setResults(null);
+    setToolResults({
+      technical: null,
+      content: null,
+      query: null,
+      visibility: null
+    });
     setActiveTabIndex(-1);
   };
 
@@ -366,8 +503,14 @@ export default function App() {
     setPendingUrl('');
   };
 
+  const closeLoginModal = () => {
+    setShowLoginModal(false);
+    setAuthError('');
+  };
+
   const closeOTPModal = () => {
     setShowOTPModal(false);
+    // Go back to the previous modal based on context
     setShowLeadModal(true);
     setAuthError('');
   };
@@ -408,17 +551,30 @@ export default function App() {
           isAuthenticated={!!session}
         />
         
-        {/* Auth Modals */}
+        {/* Registration Modal */}
         {showLeadModal && (
           <LeadCaptureModal
             onSubmit={handleLeadSubmit}
             onClose={closeLeadModal}
+            onSwitchToLogin={handleSwitchToLogin}
             loading={authLoading}
             error={authError}
             url={pendingUrl}
           />
         )}
+
+        {/* Login Modal */}
+        {showLoginModal && (
+          <LoginModal
+            onSubmit={handleLoginSubmit}
+            onClose={closeLoginModal}
+            onSwitchToRegister={handleSwitchToRegister}
+            loading={authLoading}
+            error={authError}
+          />
+        )}
         
+        {/* OTP Modal */}
         {showOTPModal && (
           <OTPModal
             email={pendingEmail}
@@ -488,7 +644,7 @@ export default function App() {
         
         // Tool State
         activeTool={activeTool}
-        setActiveTool={setActiveTool}
+        setActiveTool={handleToolChange}  // CHANGED: Use new handler
         
         // URL & Analysis
         url={url}
@@ -497,7 +653,7 @@ export default function App() {
         setQueries={setQueries}
         loading={loading}
         error={error}
-        results={results}
+        results={toolResults[activeTool]}  // CHANGED: Pass current tool's results
         onAnalyze={() => handleAnalyze()}
         
         // Tabs
@@ -508,7 +664,7 @@ export default function App() {
         onNewTab={handleNewTab}
         
         // Usage
-        limits={limits}
+        limits={limits?.limits}
         
         // Modals
         onUpgradeClick={openPricingModalSelfService}
@@ -516,17 +672,30 @@ export default function App() {
         onContactClick={() => setShowContactModal(true)}
       />
 
-      {/* Modals (shared between landing & dashboard) */}
+      {/* Registration Modal */}
       {showLeadModal && (
         <LeadCaptureModal
           onSubmit={handleLeadSubmit}
           onClose={closeLeadModal}
+          onSwitchToLogin={handleSwitchToLogin}
           loading={authLoading}
           error={authError}
           url={pendingUrl}
         />
       )}
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <LoginModal
+          onSubmit={handleLoginSubmit}
+          onClose={closeLoginModal}
+          onSwitchToRegister={handleSwitchToRegister}
+          loading={authLoading}
+          error={authError}
+        />
+      )}
       
+      {/* OTP Modal */}
       {showOTPModal && (
         <OTPModal
           email={pendingEmail}

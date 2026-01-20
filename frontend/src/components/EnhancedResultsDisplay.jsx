@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, AlertCircle, AlertTriangle, Info, ChevronDown, ChevronUp, TrendingUp, Check, X } from 'lucide-react';
+import { ExternalLink, AlertCircle, AlertTriangle, Info, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 
 // ===========================================
 // SCORE CIRCLE COMPONENT
@@ -16,21 +16,20 @@ const ScoreCircle = ({ score, showDelta = false, previousScore = null }) => {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-32 h-32">
-        <svg className="w-32 h-32 transform -rotate-90">
-          <circle cx="64" cy="64" r="54" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+      <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+        <svg className="w-28 h-28 sm:w-32 sm:h-32 transform -rotate-90">
+          <circle cx="50%" cy="50%" r="45%" stroke="#e5e7eb" strokeWidth="8" fill="none" />
           <circle
-            cx="64" cy="64" r="54"
+            cx="50%" cy="50%" r="45%"
             stroke={color}
             strokeWidth="8"
             fill="none"
-            strokeDasharray={2 * Math.PI * 54}
-            strokeDashoffset={2 * Math.PI * 54 - (score / 100) * 2 * Math.PI * 54}
+            strokeDasharray={`${(score / 100) * 283} 283`}
             strokeLinecap="round"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold" style={{ color }}>{score}</span>
+          <span className="text-3xl sm:text-4xl font-bold" style={{ color }}>{score}</span>
           <span className="text-xs text-gray-500">/ 100</span>
         </div>
       </div>
@@ -40,6 +39,27 @@ const ScoreCircle = ({ score, showDelta = false, previousScore = null }) => {
           <span>{delta >= 0 ? '+' : ''}{delta} from last scan</span>
         </div>
       )}
+    </div>
+  );
+};
+
+// ===========================================
+// TIPS DISPLAY COMPONENT
+// ===========================================
+const TipsDisplay = ({ tips }) => {
+  if (!tips) return null;
+  
+  return (
+    <div className="flex-1">
+      <h4 className="font-semibold text-gray-900 mb-3 text-sm">{tips.title}</h4>
+      <ul className="space-y-2">
+        {tips.items.map((tip, idx) => (
+          <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+            <span className="text-cyan-600 mt-0.5 flex-shrink-0">•</span>
+            <span>{tip}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
@@ -57,17 +77,17 @@ const ScoreCard = ({ label, score, details }) => {
   const colors = getScoreColor(score);
 
   return (
-    <div className={`${colors.bg} ${colors.border} border rounded-xl p-4`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className={`text-2xl font-bold ${colors.text}`}>{score}</span>
+    <div className={`${colors.bg} ${colors.border} border rounded-xl p-3 sm:p-4 min-w-0`}>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">{label}</span>
+        <span className={`text-xl sm:text-2xl font-bold ${colors.text} flex-shrink-0`}>{score}</span>
       </div>
       {details && details.length > 0 && (
         <div className="space-y-1">
           {details.map((detail, idx) => (
-            <div key={idx} className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">{detail.label}</span>
-              <span className="text-gray-700 font-medium">{detail.value}</span>
+            <div key={idx} className="flex items-center justify-between text-xs gap-1">
+              <span className="text-gray-600 truncate min-w-0 flex-1">{detail.label}</span>
+              <span className="text-gray-700 font-medium flex-shrink-0 text-right">{detail.value}</span>
             </div>
           ))}
         </div>
@@ -86,10 +106,10 @@ const IssueRow = ({ issue, type }) => {
   const potentialGain = issue.potentialGain || calculatePotentialGain(issue);
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+    <div className="px-3 sm:px-4 py-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-600">
               {issue.category || getCategoryFromIssue(issue)}
             </span>
@@ -102,7 +122,7 @@ const IssueRow = ({ issue, type }) => {
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="ml-4 text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
+          className="sm:ml-4 text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap self-start"
         >
           {expanded ? 'Hide details' : 'How to fix'}
         </button>
@@ -223,7 +243,7 @@ function organizeRecommendationsBySeverity(recommendations) {
 // ===========================================
 // MAIN RESULTS DISPLAY COMPONENT
 // ===========================================
-export const EnhancedResultsDisplay = ({ results, toolId }) => {
+export const EnhancedResultsDisplay = ({ results, toolId, tips }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [expandedSections, setExpandedSections] = useState({
     critical: true,
@@ -232,7 +252,57 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
     low: true
   });
 
-  if (!results) return null;
+  // Show empty state with tips if no results
+  if (!results) {
+    return (
+      <div className="mt-6">
+        {/* Score + Tips Box - Empty State */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Empty Score Placeholder */}
+            <div className="flex-shrink-0 flex flex-col items-center">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Overall Score
+              </h3>
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+                <svg className="w-28 h-28 sm:w-32 sm:h-32 transform -rotate-90">
+                  <circle cx="50%" cy="50%" r="45%" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl sm:text-4xl font-bold text-gray-300">--</span>
+                  <span className="text-xs text-gray-400">/ 100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tips */}
+            {tips && <TipsDisplay tips={tips} />}
+          </div>
+        </div>
+
+        {/* Empty Cards Placeholder */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[1, 2, 3, 4].map((_, idx) => (
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs sm:text-sm font-medium text-gray-400">--</span>
+                  <span className="text-xl sm:text-2xl font-bold text-gray-300">--</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-gray-500 mt-6 text-sm">
+            Enter a URL and click Analyze to see results
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Organize recommendations by severity
   const organizedRecs = organizeRecommendationsBySeverity(results.recommendations);
@@ -248,7 +318,7 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
   // Get previous score if available (for improvement delta)
   const previousScore = results.previousScore || null;
 
-  // Build category cards data (for Technical Audit)
+  // Build category cards data
   const categoryCards = buildCategoryCards(results, toolId);
 
   const toggleSection = (section) => {
@@ -266,18 +336,19 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
           href={results.url} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-sm text-cyan-600 hover:underline flex items-center gap-1"
+          className="text-xs sm:text-sm text-cyan-600 hover:underline flex items-center gap-1 break-all"
         >
-          {results.url} <ExternalLink className="w-4 h-4" />
+          <span className="truncate">{results.url}</span> 
+          <ExternalLink className="w-4 h-4 flex-shrink-0" />
         </a>
       </div>
 
-      {/* Overall Score + Category Scores */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center gap-8">
+      {/* BOX 1: Overall Score + Tips */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-4">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Overall Score */}
-          <div className="flex-shrink-0">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 text-center">
+          <div className="flex-shrink-0 flex flex-col items-center">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Overall Score
             </h3>
             <ScoreCircle
@@ -287,28 +358,33 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
             />
           </div>
 
-          {/* Category Scores */}
-          {categoryCards.length > 0 && (
-            <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {categoryCards.map((card, idx) => (
-                <ScoreCard
-                  key={idx}
-                  label={card.label}
-                  score={card.score}
-                  details={card.details}
-                />
-              ))}
-            </div>
-          )}
+          {/* Tips */}
+          {tips && <TipsDisplay tips={tips} />}
         </div>
       </div>
 
+      {/* BOX 2: Category Cards Only */}
+      {categoryCards.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {categoryCards.map((card, idx) => (
+              <ScoreCard
+                key={idx}
+                label={card.label}
+                score={card.score}
+                details={card.details}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter Tabs */}
       {totalIssues > 0 && (
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-4 flex-wrap overflow-x-auto pb-2 -mx-1 px-1">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
               activeFilter === 'all'
                 ? 'bg-cyan-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
@@ -319,7 +395,7 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
           {errorCount > 0 && (
             <button
               onClick={() => setActiveFilter('errors')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeFilter === 'errors'
                   ? 'bg-red-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
@@ -331,7 +407,7 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
           {warningCount > 0 && (
             <button
               onClick={() => setActiveFilter('warnings')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeFilter === 'warnings'
                   ? 'bg-amber-500 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
@@ -343,7 +419,7 @@ export const EnhancedResultsDisplay = ({ results, toolId }) => {
           {noticeCount > 0 && (
             <button
               onClick={() => setActiveFilter('notices')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeFilter === 'notices'
                   ? 'bg-blue-500 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
@@ -524,22 +600,20 @@ function buildCategoryCards(results, toolId) {
   return cards;
 }
 
+// ===========================================
+// TECHNICAL AUDIT DETAILS
+// ===========================================
 function buildSchemaDetails(results) {
   const details = [];
   
-  // Check if structured data exists
-  const hasJsonLd = results.structuredData?.jsonLd?.length > 0;
   const schemaCount = results.structuredData?.jsonLd?.length || 0;
-  
   details.push({ label: 'Schema Types', value: `${schemaCount} found` });
   
-  // Check for FAQ schema
   const hasFAQ = results.structuredData?.jsonLd?.some(s => 
     s['@type'] === 'FAQPage' || (Array.isArray(s['@type']) && s['@type'].includes('FAQPage'))
   );
   details.push({ label: 'FAQ Schema', value: hasFAQ ? 'Present' : 'Missing' });
   
-  // Check for Organization schema
   const hasOrg = results.structuredData?.jsonLd?.some(s => 
     s['@type'] === 'Organization' || (Array.isArray(s['@type']) && s['@type'].includes('Organization'))
   );
@@ -551,15 +625,12 @@ function buildSchemaDetails(results) {
 function buildCrawlabilityDetails(results) {
   const details = [];
   
-  // Indexable status
   const isIndexable = !results.meta?.robots?.includes('noindex');
   details.push({ label: 'Indexable', value: isIndexable ? 'Yes' : 'No' });
   
-  // HTTPS
   const hasHTTPS = results.url?.startsWith('https://');
   details.push({ label: 'HTTPS', value: hasHTTPS ? 'Enabled' : 'Disabled' });
   
-  // Canonical
   const hasCanonical = !!results.meta?.canonical;
   details.push({ label: 'Canonical', value: hasCanonical ? 'Present' : 'Missing' });
   
@@ -569,15 +640,12 @@ function buildCrawlabilityDetails(results) {
 function buildStructureDetails(results) {
   const details = [];
   
-  // H1 count
   const h1Count = results.headers?.h1?.length || 0;
   details.push({ label: 'H1 Tags', value: h1Count === 1 ? '1 (Good)' : `${h1Count} (${h1Count === 0 ? 'Missing' : 'Multiple'})` });
   
-  // H2 count
   const h2Count = results.headers?.h2?.length || 0;
   details.push({ label: 'H2 Subheadings', value: `${h2Count} found` });
   
-  // Word count
   const wordCount = results.contentStats?.wordCount || 0;
   details.push({ label: 'Word Count', value: `${wordCount} words` });
   
@@ -587,17 +655,14 @@ function buildStructureDetails(results) {
 function buildAccessibilityDetails(results) {
   const details = [];
   
-  // Image alt text
   const totalImages = results.images?.total || 0;
   const missingAlt = results.images?.missingAlt || 0;
   const altPercentage = totalImages > 0 ? Math.round(((totalImages - missingAlt) / totalImages) * 100) : 100;
   details.push({ label: 'Image Alt Text', value: `${altPercentage}% covered` });
   
-  // Main element
   const hasMain = results.semanticHTML?.hasMain || false;
   details.push({ label: '<main> Element', value: hasMain ? 'Present' : 'Missing' });
   
-  // Semantic HTML
   const hasArticle = results.semanticHTML?.hasArticle || false;
   const hasSection = results.semanticHTML?.hasSection || false;
   const semanticCount = [hasMain, hasArticle, hasSection].filter(Boolean).length;
@@ -606,25 +671,21 @@ function buildAccessibilityDetails(results) {
   return details;
 }
 
-// ============================================
+// ===========================================
 // CONTENT QUALITY DETAILS
-// ============================================
-
+// ===========================================
 function buildReadabilityDetails(results) {
   const details = [];
   const readability = results.readability;
   
   if (readability?.metrics) {
-    // Flesch Score
     const flesch = Math.round(readability.metrics.fleschScore);
     let fleschLabel = flesch >= 60 ? 'Good' : flesch >= 50 ? 'Fair' : 'Hard';
     details.push({ label: 'Flesch Score', value: `${flesch} (${fleschLabel})` });
     
-    // Avg Sentence Length
     const avgSentence = Math.round(readability.metrics.avgWordsPerSentence);
     details.push({ label: 'Avg Sentence', value: `${avgSentence} words` });
     
-    // Avg Paragraph Length
     const avgParagraph = Math.round(readability.metrics.avgWordsPerParagraph);
     let paraLabel = avgParagraph <= 100 ? 'Good' : avgParagraph <= 150 ? 'Fair' : 'Long';
     details.push({ label: 'Avg Paragraph', value: `${avgParagraph} words (${paraLabel})` });
@@ -638,15 +699,12 @@ function buildQAPatternsDetails(results) {
   const qaPatterns = results.qaPatterns;
   
   if (qaPatterns) {
-    // Question Headers
     const qCount = qaPatterns.questionHeaders?.count || 0;
     details.push({ label: 'Question Headers', value: `${qCount} found` });
     
-    // FAQ Section
     const hasFAQ = qaPatterns.hasFAQSection || false;
     details.push({ label: 'FAQ Section', value: hasFAQ ? 'Present' : 'Missing' });
     
-    // Direct Answers
     const directCount = qaPatterns.directAnswers?.count || 0;
     details.push({ label: 'Direct Answers', value: `${directCount} patterns` });
   }
@@ -659,15 +717,12 @@ function buildCitationWorthinessDetails(results) {
   const citation = results.citationWorthiness;
   
   if (citation) {
-    // Author Attribution
     const hasAuthor = citation.authoritySignals?.hasAuthor || false;
     details.push({ label: 'Author Attribution', value: hasAuthor ? 'Present' : 'Missing' });
     
-    // Publish Date
     const hasDate = citation.authoritySignals?.hasPublishDate || false;
     details.push({ label: 'Publish Date', value: hasDate ? 'Present' : 'Missing' });
     
-    // External Sources
     const hasSources = citation.sources || false;
     details.push({ label: 'External Sources', value: hasSources ? 'Cited' : 'Not cited' });
   }
@@ -680,15 +735,12 @@ function buildAIStructureDetails(results) {
   const structure = results.aiStructure;
   
   if (structure) {
-    // Strong Opening
     const hasOpening = structure.firstParagraph?.isOptimized || false;
     details.push({ label: 'Strong Opening', value: hasOpening ? 'Yes' : 'No' });
     
-    // Summary Section
     const hasSummary = structure.hasSummary || false;
     details.push({ label: 'Summary Section', value: hasSummary ? 'Present' : 'Missing' });
     
-    // Conclusion
     const hasConclusion = structure.hasConclusion || false;
     details.push({ label: 'Conclusion', value: hasConclusion ? 'Present' : 'Missing' });
   }
@@ -696,26 +748,22 @@ function buildAIStructureDetails(results) {
   return details;
 }
 
-// ============================================
+// ===========================================
 // AI VISIBILITY DETAILS
-// ============================================
-
+// ===========================================
 function buildVisibilityCitationDetails(results) {
   const details = [];
   const citation = results.citationPotential;
   
   if (citation) {
-    // Quotable Sentences
     const quotableCount = citation.quotableSentences?.count || 0;
     const quotableRatio = citation.quotableSentences?.ratio || 0;
     details.push({ label: 'Quotable Sentences', value: `${quotableCount} (${quotableRatio}%)` });
     
-    // Factual Density
     const density = citation.factualDensity || 0;
     let densityLabel = density >= 3 ? 'High' : density >= 2 ? 'Medium' : 'Low';
     details.push({ label: 'Factual Density', value: `${density} (${densityLabel})` });
     
-    // Direct Answers
     const directCount = citation.directAnswers?.count || 0;
     details.push({ label: 'Direct Answers', value: `${directCount} found` });
   }
@@ -728,15 +776,12 @@ function buildVisibilityCrawlabilityDetails(results) {
   const crawl = results.aiCrawlability;
   
   if (crawl) {
-    // Indexable
     const isIndexable = crawl.isIndexable || false;
     details.push({ label: 'Indexable', value: isIndexable ? 'Yes' : 'No' });
     
-    // HTTPS
     const hasHTTPS = crawl.hasHTTPS || false;
     details.push({ label: 'HTTPS', value: hasHTTPS ? 'Enabled' : 'Disabled' });
     
-    // Canonical Tag
     const hasCanonical = crawl.hasCanonical || false;
     details.push({ label: 'Canonical Tag', value: hasCanonical ? 'Present' : 'Missing' });
   }
@@ -749,17 +794,14 @@ function buildExtractabilityDetails(results) {
   const extract = results.extractability;
   
   if (extract) {
-    // Semantic HTML
     const hasMain = extract.semanticHTML?.hasMain || false;
     const hasArticle = extract.semanticHTML?.hasArticle || false;
     const semanticStatus = hasMain ? '<main> present' : hasArticle ? '<article> present' : 'Missing';
     details.push({ label: 'Semantic HTML', value: semanticStatus });
     
-    // Question Headers
     const qHeaders = extract.headers?.questionStyle || 0;
     details.push({ label: 'Question Headers', value: `${qHeaders} found` });
     
-    // Lists
     const listCount = (extract.lists?.ul || 0) + (extract.lists?.ol || 0);
     let listLabel = listCount >= 3 ? 'Good' : listCount >= 1 ? 'Few' : 'None';
     details.push({ label: 'Lists', value: `${listCount} (${listLabel})` });
@@ -773,16 +815,13 @@ function buildAuthorityDetails(results) {
   const authority = results.authority;
   
   if (authority) {
-    // Author Info
     const hasAuthor = authority.authorship?.hasAuthor || false;
     details.push({ label: 'Author Info', value: hasAuthor ? 'Present' : 'Missing' });
     
-    // External Sources
     const sourceCount = authority.sources?.count || 0;
     let sourceLabel = sourceCount >= 5 ? 'Good' : sourceCount >= 2 ? 'Few' : 'Missing';
     details.push({ label: 'External Sources', value: `${sourceCount} (${sourceLabel})` });
     
-    // Content Depth
     const wordCount = authority.contentDepth || 0;
     let depthLabel = wordCount >= 800 ? 'Good' : wordCount >= 600 ? 'Fair' : 'Thin';
     details.push({ label: 'Content Depth', value: `${wordCount} words (${depthLabel})` });

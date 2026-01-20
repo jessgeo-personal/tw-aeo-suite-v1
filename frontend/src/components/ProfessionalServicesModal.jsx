@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 /**
  * Professional Services Interest Modal
@@ -32,7 +33,7 @@ const ProfessionalServicesModal = ({ isOpen, onClose }) => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/submit-lead`, {
+      const response = await fetch(`${API_URL}/api/auth/submit-lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
