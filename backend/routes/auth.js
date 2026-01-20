@@ -123,6 +123,8 @@ router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
     
+    console.log('[verify-otp] Request received for:', email);
+    
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
@@ -136,6 +138,7 @@ router.post('/verify-otp', async (req, res) => {
     const verification = await OTP.verifyOTP(normalizedEmail, otp);
     
     if (!verification.success) {
+      console.log('[verify-otp] OTP verification failed:', verification.error);
       return res.status(400).json({
         success: false,
         error: verification.error,
@@ -146,6 +149,7 @@ router.post('/verify-otp', async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail });
     
     if (!user) {
+      console.log('[verify-otp] User not found:', normalizedEmail);
       return res.status(404).json({
         success: false,
         error: 'User not found',
@@ -166,11 +170,23 @@ router.post('/verify-otp', async (req, res) => {
     req.session.email = user.email;
     req.session.verified = true;
     
-    // Save session
+    console.log('[verify-otp] Session data set:', {
+      userId: req.session.userId,
+      email: req.session.email,
+      verified: req.session.verified,
+      sessionId: req.sessionID
+    });
+    
+    // Save session explicitly and wait for it
     await new Promise((resolve, reject) => {
       req.session.save((err) => {
-        if (err) reject(err);
-        else resolve();
+        if (err) {
+          console.error('[verify-otp] Session save error:', err);
+          reject(err);
+        } else {
+          console.log('[verify-otp] Session saved successfully, ID:', req.sessionID);
+          resolve();
+        }
       });
     });
     
@@ -187,10 +203,73 @@ router.post('/verify-otp', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('OTP verification error:', error);
+    console.error('[verify-otp] Error:', error);
     res.status(500).json({
       success: false,
       error: 'Verification failed. Please try again.',
+    });
+  }
+});
+
+/**
+ * POST /api/auth/login
+ * Login for existing users - sends OTP if user exists
+ */
+router.post('/login', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required',
+      });
+    }
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check if user exists
+    const user = await User.findOne({ email: normalizedEmail });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'No account found with this email. Please register first.',
+      });
+    }
+    
+    // Generate and send OTP
+    const otpCode = OTP.generateOTP();
+    
+    // Save OTP
+    const otpRecord = new OTP({
+      email: normalizedEmail,
+      otp: otpCode,
+    });
+    await otpRecord.save();
+    
+    // Send OTP email
+    const emailResult = await sendOTPEmail(normalizedEmail, otpCode, user.firstName);
+    
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send verification email. Please try again.',
+      });
+    }
+    
+    console.log(`✓ Login OTP sent to existing user: ${normalizedEmail}`);
+    
+    res.json({
+      success: true,
+      message: 'Verification code sent to your email',
+    });
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'An error occurred. Please try again.',
     });
   }
 });
@@ -262,7 +341,16 @@ router.post('/resend-otp', async (req, res) => {
  */
 router.get('/session', async (req, res) => {
   try {
+    console.log('[session] Check requested');
+    console.log('[session] Session ID:', req.sessionID);
+    console.log('[session] Session data:', {
+      userId: req.session?.userId,
+      email: req.session?.email,
+      verified: req.session?.verified
+    });
+    
     if (!req.session.userId || !req.session.verified) {
+      console.log('[session] Not authenticated - missing userId or verified flag');
       return res.json({
         authenticated: false,
       });
@@ -271,11 +359,14 @@ router.get('/session', async (req, res) => {
     const user = await User.findById(req.session.userId);
     
     if (!user) {
+      console.log('[session] User not found in DB, destroying session');
       req.session.destroy();
       return res.json({
         authenticated: false,
       });
     }
+    
+    console.log('[session] Authenticated as:', user.email);
     
     res.json({
       authenticated: true,
@@ -289,7 +380,7 @@ router.get('/session', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Session check error:', error);
+    console.error('[session] Error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to check session',

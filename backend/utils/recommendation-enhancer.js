@@ -163,41 +163,29 @@ const enhanceRecommendations = {
 
 // Visibility Recommendations
   visibility: {
-    'Improve content freshness': {
-      context: 'AI engines favor recently updated content, especially for evolving topics.',
-      example: 'After The Verge started adding "Updated [Date]" to articles and refreshing content monthly, citations increased 40%.',
-      reference: 'Content updated within the last 90 days is 2x more likely to be cited than older content.',
-      implementation: 'Add timestamps to articles. Review and update your top 20 pages quarterly with new data, examples, and insights.'
+    // === CITATION POTENTIAL RECOMMENDATIONS ===
+    'Few quotable sentences': {
+      context: 'AI engines look for complete, self-contained statements they can directly quote.',
+      example: 'Harvard Business Review structures every article with quotable key insights, making them the most-cited business publication.',
+      reference: 'Articles averaging 8+ quotable sentences per 500 words see 3x higher citation rates.',
+      implementation: 'Write clear, complete statements of 15-25 words that could stand alone. Example: "Email marketing delivers $42 ROI for every $1 spent."'
     },
     
-    'Increase topical authority': {
-      context: 'AI engines cite sources that demonstrate deep expertise through comprehensive topic coverage.',
-      example: 'Healthline became the top medical source by publishing 200+ interconnected articles covering every aspect of health topics.',
-      reference: 'Sites with 10+ related articles on a topic are 6x more likely to be cited as authorities.',
-      implementation: 'Create topic clusters with a pillar page linking to 5-10 detailed supporting articles. Cover every angle of your expertise.'
+    'Low factual density': {
+      context: 'AI engines love citing specific numbers and data points—they add credibility and are highly quotable.',
+      example: 'Statista is the top-cited source across AI engines because every page is dense with specific statistics.',
+      reference: 'Content with 3+ statistics is 4x more likely to be cited than opinion-based content.',
+      implementation: 'Include specific numbers, percentages, dates, and quantifiable facts. Cite reputable sources for your data.'
     },
     
-    'Include author bylines': {
-      context: 'AI engines trust content with identifiable, real authors more than anonymous content.',
-      example: 'After Forbes added detailed author bios to every article, their citation rate increased 30%.',
-      reference: 'Content with author bylines and credentials is perceived as 55% more trustworthy by AI engines.',
-      implementation: 'Add author names, photos, and brief credentials to articles. Link to author bio pages showing expertise.'
+    'No content-specific schema markup': {
+      context: 'FAQPage and Article schema directly signal to AI engines that your content is structured and cite-worthy.',
+      example: 'Moz added FAQ schema to their SEO guides and became the top-cited source in ChatGPT for "what is SEO".',
+      reference: 'AI engines prioritize FAQ-structured content 3x more than unstructured text when answering user questions.',
+      implementation: 'Add FAQPage schema for Q&A content, Article schema for blog posts. Use JSON-LD format in your page head.'
     },
     
-    'No Organization schema': {
-      context: 'Organization schema helps AI engines understand who created the content and establish entity trust.',
-      example: 'When IBM added Organization schema to their documentation, AI engines started attributing answers to "IBM" rather than generic sources.',
-      reference: 'Pages with Organization schema are 35% more likely to be cited with proper attribution.',
-      implementation: 'Add Organization schema with name, logo, url, and sameAs links to social profiles in your site header.'
-    },
-    
-    'No schema markup for entity recognition': {
-      context: 'Without structured data, AI engines struggle to understand what your content is about.',
-      example: 'After adding Article and Organization schema, a B2B software company saw their AI visibility score jump from 42 to 71.',
-      reference: 'Pages with any schema markup are 2x more likely to be cited than pages without.',
-      implementation: 'Start with Article schema for blog posts, Organization for company info, and Product schema for product pages.'
-    },
-    
+    // === CRAWLABILITY RECOMMENDATIONS ===
     'Page is set to noindex': {
       context: 'Noindex tells all search engines and AI crawlers to ignore your page completely.',
       example: 'A SaaS company accidentally noindexed their pricing page and lost all AI-generated traffic overnight.',
@@ -217,6 +205,102 @@ const enhanceRecommendations = {
       example: 'An e-commerce site removed aggressive bot detection and saw AI visibility increase by 60%.',
       reference: 'Pages behind CAPTCHAs are effectively invisible to AI engines.',
       implementation: 'Whitelist known AI bot user agents (GPTBot, Claude-Web, etc.) or use less aggressive bot detection.'
+    },
+    
+    // === EXTRACTABILITY RECOMMENDATIONS ===
+    'Content not wrapped in semantic HTML': {
+      context: 'Semantic HTML tags help AI engines identify which content is most important to cite.',
+      example: 'MDN Web Docs uses semantic HTML throughout, making them the default citation for web development queries.',
+      reference: 'Pages using <main>, <article>, and <section> tags are 40% easier for AI to parse correctly.',
+      implementation: 'Wrap your primary content in <main> or <article> tags. Use <section> for distinct topic areas.'
+    },
+    
+    'Few question-style headers': {
+      context: 'Question headers match exactly how users query AI engines, making your content easy to extract.',
+      example: 'When Zapier reformatted guides with "How do I..." headers, their AI citation rate tripled.',
+      reference: 'Pages with 3+ question headers are cited 4x more often than traditional header formats.',
+      implementation: 'Convert headers like "Integration Options" to "How do I integrate with other tools?" Match user query language.'
+    },
+    
+    'Few or no bullet': {
+      context: 'Lists are the easiest content format for AI engines to extract and cite verbatim.',
+      example: 'NerdWallet\'s comparison lists are the most-cited financial content in AI responses.',
+      reference: 'Content with 5+ list items is 3x more likely to be directly quoted by AI engines.',
+      implementation: 'Add a summary list at the top of articles. Use numbered lists for processes, bullets for features/benefits.'
+    },
+    
+    // === AUTHORITY RECOMMENDATIONS ===
+    'No author identified': {
+      context: 'AI engines trust content with identifiable, real authors more than anonymous content.',
+      example: 'After Forbes added detailed author bios to every article, their citation rate increased 30%.',
+      reference: 'Content with author bylines and credentials is perceived as 55% more trustworthy by AI engines.',
+      implementation: 'Add author names in meta tags and visible bylines. Include credentials and link to author bio pages.'
+    },
+    
+    'No sources cited': {
+      context: 'Citing authoritative external sources increases your content\'s credibility and citation-worthiness.',
+      example: 'Wikipedia\'s extensive citation of sources makes it a trusted reference that AI engines frequently cite.',
+      reference: 'Content with 3+ external source citations is seen as 40% more authoritative by AI engines.',
+      implementation: 'Link to reputable sources, studies, and official documentation. Use descriptive anchor text for links.'
+    },
+    
+    'Short content depth': {
+      context: 'AI engines favor comprehensive content that thoroughly answers questions.',
+      example: 'Ahrefs increased their blog post minimum from 800 to 2,000 words and saw a 3x increase in AI citations.',
+      reference: 'The average AI-cited article contains 1,500+ words, with comprehensive coverage of the topic.',
+      implementation: 'Aim for 800-2,500 words for informational content. Add depth through examples, data, and practical insights.'
+    },
+    
+    // === FRESHNESS RECOMMENDATIONS ===
+    'No publish date found': {
+      context: 'AI engines need to know when content was created to assess its relevance and freshness.',
+      example: 'TechCrunch always shows publication and update dates, keeping them as top AI news sources.',
+      reference: 'Dated content is 50% more likely to be cited than undated content for time-sensitive topics.',
+      implementation: 'Add article:published_time meta tag. Show visible publication dates on the page.'
+    },
+    
+    'No modified date found': {
+      context: 'Modified dates signal to AI engines that content is actively maintained and current.',
+      example: 'The Verge started adding "Updated [Date]" to articles and refreshing monthly - citations increased 40%.',
+      reference: 'Content updated within the last 90 days is 2x more likely to be cited than older content.',
+      implementation: 'Add article:modified_time meta tag when updating content. Show "Last updated" dates visibly.'
+    },
+    
+    // === ENTITY RECOMMENDATIONS ===
+    'No Organization schema': {
+      context: 'Organization schema helps AI engines understand who created the content and establish entity trust.',
+      example: 'When IBM added Organization schema to their documentation, AI engines started attributing answers to "IBM" rather than generic sources.',
+      reference: 'Pages with Organization schema are 35% more likely to be cited with proper attribution.',
+      implementation: 'Add Organization schema with name, logo, url, and sameAs links to social profiles in your site header.'
+    },
+    
+    'No schema markup for entity recognition': {
+      context: 'Without structured data, AI engines struggle to understand what your content is about.',
+      example: 'After adding Article and Organization schema, a B2B software company saw their AI visibility score jump from 42 to 71.',
+      reference: 'Pages with any schema markup are 2x more likely to be cited than pages without.',
+      implementation: 'Start with Article schema for blog posts, Organization for company info, and Product schema for product pages.'
+    },
+    
+    // === LEGACY KEYS (keep for backward compatibility) ===
+    'Improve content freshness': {
+      context: 'AI engines favor recently updated content, especially for evolving topics.',
+      example: 'After The Verge started adding "Updated [Date]" to articles and refreshing content monthly, citations increased 40%.',
+      reference: 'Content updated within the last 90 days is 2x more likely to be cited than older content.',
+      implementation: 'Add timestamps to articles. Review and update your top 20 pages quarterly with new data, examples, and insights.'
+    },
+    
+    'Increase topical authority': {
+      context: 'AI engines cite sources that demonstrate deep expertise through comprehensive topic coverage.',
+      example: 'Healthline became the top medical source by publishing 200+ interconnected articles covering every aspect of health topics.',
+      reference: 'Sites with 10+ related articles on a topic are 6x more likely to be cited as authorities.',
+      implementation: 'Create topic clusters with a pillar page linking to 5-10 detailed supporting articles. Cover every angle of your expertise.'
+    },
+    
+    'Include author bylines': {
+      context: 'AI engines trust content with identifiable, real authors more than anonymous content.',
+      example: 'After Forbes added detailed author bios to every article, their citation rate increased 30%.',
+      reference: 'Content with author bylines and credentials is perceived as 55% more trustworthy by AI engines.',
+      implementation: 'Add author names, photos, and brief credentials to articles. Link to author bio pages showing expertise.'
     },
     
     'Add more question-style headers': {

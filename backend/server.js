@@ -41,50 +41,98 @@ connectDB();
 // MIDDLEWARE
 // ============================================================
 
-// Security
-app.use(helmet());
+// Security - configure helmet to allow cross-origin cookies
+app.use(helmet({
+  contentSecurityPolicy: false,  // May interfere with inline scripts
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// CORS - Allow frontend domain
+// CORS - Allow frontend domain with proper credentials support
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+  'http://localhost:3001',  // Backend itself (for redirects/same-origin)
   'https://aeo.thatworkx.com',
-  'https://tw-aeo-suite-app-aktwv.ondigitalocean.app'
-];
+  'https://tw-aeo-suite-app-aktwv.ondigitalocean.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);  // Remove undefined/null
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified origin.';
-      return callback(new Error(msg), false);
+    // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
+    if (!origin) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // Remove trailing slash for comparison
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.some(allowed => allowed === normalizedOrigin || allowed === origin)) {
+      return callback(null, origin);
+    }
+    
+    // For local development, allow any localhost origin
+    if (normalizedOrigin.startsWith('http://localhost:')) {
+      return callback(null, origin);
+    }
+    
+    console.log('[CORS] Blocked origin:', origin);
+    return callback(new Error('CORS not allowed'), false);
   },
-  credentials: true, // Allow cookies
+  credentials: true,  // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
 }));
 
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Determine if running in production
+// Set NODE_ENV=production in DigitalOcean environment variables
+const isProduction = process.env.NODE_ENV === 'production';
+
+console.log('[Server] Starting with config:', {
+  NODE_ENV: process.env.NODE_ENV || 'not set',
+  isProduction,
+  PORT: process.env.PORT
+});
+
 // Session management
+// - Local: proxy handles same-origin, so sameSite: 'lax' works
+// - Production: cross-origin needs sameSite: 'none' + secure: true
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'change-this-in-production',
+  name: 'aeo.sid',
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
+  proxy: isProduction,  // Trust proxy in production (DigitalOcean)
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     touchAfter: 24 * 3600,
   }),
   cookie: {
-    secure: true,  // Always true for HTTPS
+    secure: isProduction,                      // true for HTTPS in production, false for HTTP locally
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: 'none',  // Changed from 'lax' to 'none' for cross-domain
+    maxAge: 7 * 24 * 60 * 60 * 1000,          // 7 days
+    sameSite: isProduction ? 'none' : 'lax',  // 'none' for cross-origin in production
+    path: '/',
   },
 }));
+
+// Debug logging for session (can be removed later)
+app.use((req, res, next) => {
+  if (req.path.includes('/auth') || req.path.includes('/technical') || req.path.includes('/content') || req.path.includes('/query') || req.path.includes('/visibility')) {
+    console.log(`[${req.method}] ${req.path}`, {
+      sessionID: req.sessionID?.substring(0, 8) + '...',
+      userId: req.session?.userId || 'none',
+      cookie: req.headers.cookie ? 'present' : 'missing'
+    });
+  }
+  next();
+});
 
 // Rate limiting (general)
 const limiter = rateLimit({
@@ -93,6 +141,18 @@ const limiter = rateLimit({
   message: 'Too many requests, please try again later',
 });
 app.use('/', limiter);
+
+// ============================================================
+// API PREFIX MIDDLEWARE
+// Strips /api prefix for local development compatibility
+// In production, DigitalOcean's ingress already strips it
+// ============================================================
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    req.url = req.url.replace('/api', '');
+  }
+  next();
+});
 
 // ============================================================
 // ROUTES
@@ -375,6 +435,23 @@ app.get('/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     database: require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
+  });
+});
+
+// Session debug endpoint
+app.get('/session-debug', (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    hasSession: !!req.session,
+    sessionData: {
+      userId: req.session?.userId || null,
+      email: req.session?.email || null,
+      verified: req.session?.verified || false
+    },
+    cookieReceived: !!req.headers.cookie,
+    cookieName: req.headers.cookie ? req.headers.cookie.split(';').find(c => c.trim().startsWith('aeo.sid')) : null,
+    isProduction: process.env.NODE_ENV === 'production',
+    origin: req.headers.origin
   });
 });
 

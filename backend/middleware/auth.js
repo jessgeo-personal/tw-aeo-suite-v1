@@ -23,12 +23,23 @@ const getDailyLimit = (toolName) => {
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
+  console.log('[requireAuth] Checking authentication');
+  console.log('[requireAuth] Session ID:', req.sessionID);
+  console.log('[requireAuth] Session data:', {
+    userId: req.session?.userId,
+    email: req.session?.email,
+    verified: req.session?.verified
+  });
+  console.log('[requireAuth] Cookies received:', req.headers.cookie);
+  
   if (!req.session || !req.session.userId) {
+    console.log('[requireAuth] FAILED - No session or userId');
     return res.status(401).json({
       error: 'Authentication required',
       message: 'Please log in to access this resource'
     });
   }
+  console.log('[requireAuth] PASSED for user:', req.session.email);
   next();
 };
 
