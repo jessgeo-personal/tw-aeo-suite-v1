@@ -1,6 +1,10 @@
 {
-  "name": "aeo-backend-v2",
+  "name": "aeo-frontend-v2",
   "version": "2.0.0",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "description": "AEO Audit Suite Backend - Redesigned with 5 analyzers",
   "main": "server.js",
   "scripts": {
@@ -32,8 +36,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }

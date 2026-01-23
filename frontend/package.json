@@ -1,6 +1,10 @@
 {
   "name": "aeo-frontend-v2",
   "version": "2.0.0",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "description": "AEO Suite Frontend - Answer Engine Optimization Audit Tool",
   "private": true,
   "dependencies": {
