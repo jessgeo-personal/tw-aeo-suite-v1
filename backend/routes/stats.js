@@ -22,8 +22,8 @@ router.get('/', async (req, res) => {
     
     // Return default values on error
     res.json({
-      totalAnalyses: 950,
-      totalUsers: 43
+      totalAnalyses: 1025,
+      totalUsers: 78
     });
   }
 });

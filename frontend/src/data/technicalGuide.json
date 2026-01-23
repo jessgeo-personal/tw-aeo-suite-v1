@@ -1,0 +1,1903 @@
+{
+  "title": "Technical Implementation Guide",
+  "subtitle": "Scoring Algorithms, Implementation Details, and Optimization Techniques",
+  "audience": "For Developers, SEO Specialists, and Technical Teams",
+  "sections": [
+    {
+      "title": "Technical Architecture Overview",
+      "subsections": [],
+      "content": [
+        {
+          "type": "text",
+          "text": "The AEO Suite performs static HTML analysis on server-rendered pages using the Cheerio library for DOM parsing. All analyzers operate on the final HTML sent to clients, meaning JavaScript-rendered content is not evaluated unless it's present in the initial server response."
+        },
+        {
+          "type": "text",
+          "text": "Core Technical Principles:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Static HTML parsing only - no browser execution or JavaScript evaluation",
+            "Cheerio-based DOM traversal using jQuery-like selectors",
+            "Deterministic scoring - identical input produces identical output",
+            "Content extraction priority: <article> \u2192 <main> \u2192 <body>",
+            "UTF-8 text processing with regex pattern matching"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Technology Stack:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Backend: Node.js/Express",
+            "HTML Parsing: Cheerio (server-side jQuery)",
+            "HTTP Client: Axios with SSL/TLS handling",
+            "Database: MongoDB Atlas for analysis storage",
+            "Rate Limiting: IP and email-based throttling"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Analyzer 1: Technical Foundation - Detailed Specifications",
+      "subsections": [
+        {
+          "title": "1.1 Schema Markup Analysis (40 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Schema markup provides explicit semantic information to AI engines through JSON-LD structured data. The analyzer detects, validates, and scores schema based on presence, type, and completeness."
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm:"
+            },
+            {
+              "type": "text",
+              "text": "// Step 1: Extract all JSON-LD script blocks"
+            },
+            {
+              "type": "text",
+              "text": "const schemas = [];"
+            },
+            {
+              "type": "text",
+              "text": "$('script[type=\"application/ld+json\"]').each((i, elem) => {"
+            },
+            {
+              "type": "text",
+              "text": "try {"
+            },
+            {
+              "type": "text",
+              "text": "const schema = JSON.parse($(elem).html());"
+            },
+            {
+              "type": "text",
+              "text": "schemas.push(schema);"
+            },
+            {
+              "type": "text",
+              "text": "} catch (e) {"
+            },
+            {
+              "type": "text",
+              "text": "// Invalid JSON - logged but not scored"
+            },
+            {
+              "type": "text",
+              "text": "console.warn('Invalid schema JSON at index', i);"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "// Step 2: Extract schema types from @type and @graph"
+            },
+            {
+              "type": "text",
+              "text": "const schemaTypes = [];"
+            },
+            {
+              "type": "text",
+              "text": "schemas.forEach(data => {"
+            },
+            {
+              "type": "text",
+              "text": "if (data['@type']) {"
+            },
+            {
+              "type": "text",
+              "text": "// Single type or array of types"
+            },
+            {
+              "type": "text",
+              "text": "schemaTypes.push(...[].concat(data['@type']));"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "if (data['@graph']) {"
+            },
+            {
+              "type": "text",
+              "text": "// Graph structure with multiple items"
+            },
+            {
+              "type": "text",
+              "text": "data['@graph'].forEach(item => {"
+            },
+            {
+              "type": "text",
+              "text": "if (item['@type']) {"
+            },
+            {
+              "type": "text",
+              "text": "schemaTypes.push(...[].concat(item['@type']));"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Breakdown:"
+            },
+            {
+              "type": "text",
+              "text": "Valuable Schema Types (Full List):"
+            },
+            {
+              "type": "text",
+              "text": "const valuableTypes = ["
+            },
+            {
+              "type": "text",
+              "text": "'Article',      // Blog posts, news articles"
+            },
+            {
+              "type": "text",
+              "text": "'NewsArticle',  // News-specific content"
+            },
+            {
+              "type": "text",
+              "text": "'BlogPosting',  // Blog content"
+            },
+            {
+              "type": "text",
+              "text": "'Product',      // E-commerce products"
+            },
+            {
+              "type": "text",
+              "text": "'Organization', // Company info"
+            },
+            {
+              "type": "text",
+              "text": "'Person',       // Author/individual"
+            },
+            {
+              "type": "text",
+              "text": "'FAQPage',      // Q&A content"
+            },
+            {
+              "type": "text",
+              "text": "'HowTo'         // Instructional content"
+            },
+            {
+              "type": "text",
+              "text": "];"
+            },
+            {
+              "type": "text",
+              "text": "Technical Implementation:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Place JSON-LD in <head> or beginning of <body> for reliable parsing",
+                "Use @graph wrapper when combining multiple schema types",
+                "Validate JSON syntax - even minor errors cause complete rejection",
+                "Include @context: \"https://schema.org\" for vocabulary definition",
+                "Arrays in @type are flattened during detection"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Edge Cases and Considerations:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Invalid JSON syntax \u2192 Schema not detected, zero points awarded",
+                "Missing @type property \u2192 Schema detected but not typed correctly",
+                "Multiple schemas \u2192 All types aggregated for scoring",
+                "Nested @graph structures \u2192 Recursively processed",
+                "Schema in <noscript> \u2192 Not parsed (requires script[type=\"application/ld+json\"])"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Example Implementation (Maximum Points):"
+            },
+            {
+              "type": "text",
+              "text": "<script type=\"application/ld+json\">"
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@context\": \"https://schema.org\","
+            },
+            {
+              "type": "text",
+              "text": "\"@graph\": ["
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Article\","
+            },
+            {
+              "type": "text",
+              "text": "\"headline\": \"Complete Guide to AEO\","
+            },
+            {
+              "type": "text",
+              "text": "\"author\": {"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Person\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"Jane Expert\","
+            },
+            {
+              "type": "text",
+              "text": "\"url\": \"https://example.com/authors/jane-expert\","
+            },
+            {
+              "type": "text",
+              "text": "\"jobTitle\": \"SEO Specialist\""
+            },
+            {
+              "type": "text",
+              "text": "},"
+            },
+            {
+              "type": "text",
+              "text": "\"publisher\": {"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Organization\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"Example Corp\","
+            },
+            {
+              "type": "text",
+              "text": "\"url\": \"https://example.com\""
+            },
+            {
+              "type": "text",
+              "text": "},"
+            },
+            {
+              "type": "text",
+              "text": "\"datePublished\": \"2024-01-01\","
+            },
+            {
+              "type": "text",
+              "text": "\"dateModified\": \"2024-01-22\""
+            },
+            {
+              "type": "text",
+              "text": "},"
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"FAQPage\","
+            },
+            {
+              "type": "text",
+              "text": "\"mainEntity\": ["
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Question\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"What is AEO?\","
+            },
+            {
+              "type": "text",
+              "text": "\"acceptedAnswer\": {"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Answer\","
+            },
+            {
+              "type": "text",
+              "text": "\"text\": \"Answer Engine Optimization...\""
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "]"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "]"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "</script>"
+            },
+            {
+              "type": "text",
+              "text": "// This implementation scores:"
+            },
+            {
+              "type": "text",
+              "text": "// - 20 points: Has structured data \u2713"
+            },
+            {
+              "type": "text",
+              "text": "// - 15 points: Has Article (valuable type) \u2713"
+            },
+            {
+              "type": "text",
+              "text": "// - 5 points: Has Person schema \u2713"
+            },
+            {
+              "type": "text",
+              "text": "// Total: 40/40 points"
+            }
+          ]
+        },
+        {
+          "title": "1.2 Crawlability Analysis (30 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Crawlability determines whether AI engines are permitted to access and index the page. This analyzer checks meta robots directives, canonical URL implementation, and internal linking patterns."
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm:"
+            },
+            {
+              "type": "text",
+              "text": "// Meta Robots Detection"
+            },
+            {
+              "type": "text",
+              "text": "const metaRobots = getMetaContent($, 'robots') || '';"
+            },
+            {
+              "type": "text",
+              "text": "const isIndexable = !metaRobots.toLowerCase().includes('noindex');"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function implementation:"
+            },
+            {
+              "type": "text",
+              "text": "function getMetaContent($, name) {"
+            },
+            {
+              "type": "text",
+              "text": "return $('meta[name=\"' + name + '\"]').attr('content') ||"
+            },
+            {
+              "type": "text",
+              "text": "$('meta[property=\"' + name + '\"]').attr('content') || '';"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Canonical URL Detection"
+            },
+            {
+              "type": "text",
+              "text": "const canonical = getAttribute($, 'link[rel=\"canonical\"]', 'href');"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function:"
+            },
+            {
+              "type": "text",
+              "text": "function getAttribute($, selector, attr) {"
+            },
+            {
+              "type": "text",
+              "text": "return $(selector).attr(attr) || null;"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Internal Links Detection"
+            },
+            {
+              "type": "text",
+              "text": "const baseUrl = new URL(url);"
+            },
+            {
+              "type": "text",
+              "text": "const internalLinks = $('a[href^=\"/\"], a[href^=\"' + baseUrl.origin + '\"]').length;"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Breakdown:"
+            },
+            {
+              "type": "text",
+              "text": "Meta Robots Directive Analysis:"
+            },
+            {
+              "type": "text",
+              "text": "Canonical URL Implementation:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Self-referential canonical: Points to current page URL",
+                "Cross-page canonical: Points to authoritative version (duplicate handling)",
+                "Both types award full points - distinction is semantic, not scoring",
+                "Missing canonical: Potential duplicate content confusion for AI engines"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Internal Link Detection Logic:"
+            },
+            {
+              "type": "text",
+              "text": "// Two selector patterns combined:"
+            },
+            {
+              "type": "text",
+              "text": "// 1. Relative URLs starting with /"
+            },
+            {
+              "type": "text",
+              "text": "$('a[href^=\"/\"]').length"
+            },
+            {
+              "type": "text",
+              "text": "// 2. Absolute URLs matching current domain"
+            },
+            {
+              "type": "text",
+              "text": "$('a[href^=\"' + currentDomain + '\"]').length"
+            },
+            {
+              "type": "text",
+              "text": "// Combined count:"
+            },
+            {
+              "type": "text",
+              "text": "const totalInternal = pattern1Count + pattern2Count;"
+            },
+            {
+              "type": "text",
+              "text": "// Scoring:"
+            },
+            {
+              "type": "text",
+              "text": "if (totalInternal > 0) score += 5;"
+            },
+            {
+              "type": "text",
+              "text": "Technical Considerations:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "X-Robots-Tag HTTP headers NOT evaluated (HTML parsing only)",
+                "robots.txt NOT checked (out of scope for page analysis)",
+                "JavaScript-generated links NOT counted (static HTML only)",
+                "External links with same domain pattern counted as internal",
+                "Anchor links (#section) NOT counted as internal links"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Common Implementation Issues:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "WordPress default: Often includes noindex on staging/dev environments",
+                "Canonical conflict: Multiple canonical tags \u2192 first one used by analyzers",
+                "Relative vs absolute canonicals: Both work, absolute preferred for clarity",
+                "HTTPS mismatch: Canonical must match protocol (http vs https)"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "1.3 HTML Structure Analysis (30 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "HTML structure evaluation focuses on fundamental semantic elements that help AI engines quickly understand page topic and organization. Proper structure reduces parse time and improves comprehension accuracy."
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm:"
+            },
+            {
+              "type": "text",
+              "text": "// Title Tag Extraction"
+            },
+            {
+              "type": "text",
+              "text": "const title = extractText($, 'title');"
+            },
+            {
+              "type": "text",
+              "text": "const titleLength = title.length;"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function:"
+            },
+            {
+              "type": "text",
+              "text": "function extractText($, selector) {"
+            },
+            {
+              "type": "text",
+              "text": "return $(selector).text().trim();"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Meta Description Extraction"
+            },
+            {
+              "type": "text",
+              "text": "const description = getMetaContent($, 'description');"
+            },
+            {
+              "type": "text",
+              "text": "const descLength = description.length;"
+            },
+            {
+              "type": "text",
+              "text": "// Heading Structure Analysis"
+            },
+            {
+              "type": "text",
+              "text": "const h1Count = countElements($, 'h1');"
+            },
+            {
+              "type": "text",
+              "text": "const h2Count = countElements($, 'h2');"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function:"
+            },
+            {
+              "type": "text",
+              "text": "function countElements($, selector) {"
+            },
+            {
+              "type": "text",
+              "text": "return $(selector).length;"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Title Tag:"
+            },
+            {
+              "type": "text",
+              "text": "if (title && titleLength >= 30 && titleLength <= 60) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Optimal length"
+            },
+            {
+              "type": "text",
+              "text": "} else if (title) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 5;   // Exists but non-optimal"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // Missing (CRITICAL issue)"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Meta Description:"
+            },
+            {
+              "type": "text",
+              "text": "if (description && descLength >= 120 && descLength <= 160) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Optimal length"
+            },
+            {
+              "type": "text",
+              "text": "} else if (description) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 5;   // Exists but non-optimal"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // Missing"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Heading Structure:"
+            },
+            {
+              "type": "text",
+              "text": "if (h1Count === 1 && h2Count > 0) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Perfect structure"
+            },
+            {
+              "type": "text",
+              "text": "} else if (h1Count === 1) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 5;   // H1 exists, needs H2s"
+            },
+            {
+              "type": "text",
+              "text": "} else if (h1Count > 1) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 3;   // Multiple H1s (semantic error)"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // No H1 (CRITICAL)"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Technical Implementation Notes:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Title tag: Place in <head>, single instance only",
+                "Meta description: name=\"description\" in <head>",
+                "H1: Exactly one per page, contains primary keyword",
+                "H2-H6: Hierarchical structure, don't skip levels",
+                "Character count: Includes all characters, spaces, punctuation"
+              ]
+            }
+          ]
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "The Technical Foundation analyzer evaluates three critical technical aspects that determine whether AI engines can successfully crawl, parse, and understand page structure. Maximum score: 100 points."
+        },
+        {
+          "type": "text",
+          "text": "Component Allocation:"
+        }
+      ]
+    },
+    {
+      "title": "Analyzer 5: AI Visibility Assessment - Comprehensive Technical Specification",
+      "subsections": [
+        {
+          "title": "5.1 Citation Potential Analysis (35 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Citation potential measures the density and quality of statements that AI engines can extract and quote directly. This component uses regex pattern matching and sentence analysis to identify citable content, attributed statements, and original insights."
+            },
+            {
+              "type": "text",
+              "text": "Core Detection Algorithm:"
+            },
+            {
+              "type": "text",
+              "text": "// Step 1: Sentence Segmentation"
+            },
+            {
+              "type": "text",
+              "text": "const sentences = mainContent"
+            },
+            {
+              "type": "text",
+              "text": ".split(/[.!?]+/)"
+            },
+            {
+              "type": "text",
+              "text": ".map(s => s.trim())"
+            },
+            {
+              "type": "text",
+              "text": ".filter(s => s.length > 0);"
+            },
+            {
+              "type": "text",
+              "text": "// Step 2: Citable Sentence Detection"
+            },
+            {
+              "type": "text",
+              "text": "const citablePatterns = ["
+            },
+            {
+              "type": "text",
+              "text": "/^[A-Z][^.!?]{20,150}[.!?]$/,      // Concise complete statements"
+            },
+            {
+              "type": "text",
+              "text": "/\\b(is|are|means|refers to|defined as)\\b/i,  // Declarative patterns"
+            },
+            {
+              "type": "text",
+              "text": "/\\b\\d+%\\b/,                       // Statistics"
+            },
+            {
+              "type": "text",
+              "text": "/according to|research shows|studies indicate/i  // Attribution"
+            },
+            {
+              "type": "text",
+              "text": "];"
+            },
+            {
+              "type": "text",
+              "text": "let citableSentences = 0;"
+            },
+            {
+              "type": "text",
+              "text": "sentences.forEach(sentence => {"
+            },
+            {
+              "type": "text",
+              "text": "if (citablePatterns.some(pattern => pattern.test(sentence))) {"
+            },
+            {
+              "type": "text",
+              "text": "citableSentences++;"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "Citable Sentence Criteria (Deep Dive):"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Citable Sentences:"
+            },
+            {
+              "type": "text",
+              "text": "if (citableSentences >= 10) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 15;  // Excellent density"
+            },
+            {
+              "type": "text",
+              "text": "} else if (citableSentences >= 5) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Good baseline"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // Insufficient quotable content"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Attribution Detection Algorithm:"
+            },
+            {
+              "type": "text",
+              "text": "const attributionPatterns = ["
+            },
+            {
+              "type": "text",
+              "text": "/according to [A-Z][a-z]+ [A-Z][a-z]+/,  // \"according to John Smith\""
+            },
+            {
+              "type": "text",
+              "text": "/\\b[A-Z][a-z]+ [A-Z][a-z]+ (said|stated|reported|found)\\b/,"
+            },
+            {
+              "type": "text",
+              "text": "/research by|study from|data from/i"
+            },
+            {
+              "type": "text",
+              "text": "];"
+            },
+            {
+              "type": "text",
+              "text": "let attributedStatements = 0;"
+            },
+            {
+              "type": "text",
+              "text": "attributionPatterns.forEach(pattern => {"
+            },
+            {
+              "type": "text",
+              "text": "const matches = mainContent.match(pattern);"
+            },
+            {
+              "type": "text",
+              "text": "if (matches) attributedStatements += matches.length;"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Attributed Statements:"
+            },
+            {
+              "type": "text",
+              "text": "if (attributedStatements >= 3) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Multiple authoritative references"
+            },
+            {
+              "type": "text",
+              "text": "} else if (attributedStatements > 0) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 5;   // Some attribution present"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // No external validation"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Original Insights Detection:"
+            },
+            {
+              "type": "text",
+              "text": "const insightPatterns = ["
+            },
+            {
+              "type": "text",
+              "text": "/\\bI found that\\b/i,"
+            },
+            {
+              "type": "text",
+              "text": "/\\bour research shows\\b/i,"
+            },
+            {
+              "type": "text",
+              "text": "/\\bin our experience\\b/i,"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwe discovered\\b/i"
+            },
+            {
+              "type": "text",
+              "text": "];"
+            },
+            {
+              "type": "text",
+              "text": "let originalInsights = 0;"
+            },
+            {
+              "type": "text",
+              "text": "insightPatterns.forEach(pattern => {"
+            },
+            {
+              "type": "text",
+              "text": "const matches = mainContent.match(pattern);"
+            },
+            {
+              "type": "text",
+              "text": "if (matches) originalInsights += matches.length;"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "Why Original Insights Matter:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "First-hand experience signals unique value proposition",
+                "Differentiation from generic aggregated content",
+                "Google's E-E-A-T explicitly prioritizes original research",
+                "AI engines prefer citing primary sources over secondary"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Scoring Logic - Original Insights:"
+            },
+            {
+              "type": "text",
+              "text": "if (originalInsights >= 2) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 10;  // Strong unique value"
+            },
+            {
+              "type": "text",
+              "text": "} else if (originalInsights > 0) {"
+            },
+            {
+              "type": "text",
+              "text": "score += 5;   // Some originality"
+            },
+            {
+              "type": "text",
+              "text": "} else {"
+            },
+            {
+              "type": "text",
+              "text": "score += 0;   // No unique insights"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Citation Potential - Complete Scoring Table:"
+            }
+          ]
+        },
+        {
+          "title": "5.2 Structured Answers Analysis (35 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Structured Answers evaluates how content is organized using schema markup and HTML elements to provide explicit, machine-readable structure. This component checks for FAQ and HowTo schema implementation and the presence of lists and tables that make information easily extractable."
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - FAQ Schema:"
+            },
+            {
+              "type": "text",
+              "text": "// Method 1: Schema type detection"
+            },
+            {
+              "type": "text",
+              "text": "function hasSchemaType($, typeName) {"
+            },
+            {
+              "type": "text",
+              "text": "const schemas = findStructuredData($);"
+            },
+            {
+              "type": "text",
+              "text": "const allTypes = [];"
+            },
+            {
+              "type": "text",
+              "text": "schemas.forEach(schema => {"
+            },
+            {
+              "type": "text",
+              "text": "if (schema['@type']) allTypes.push(schema['@type']);"
+            },
+            {
+              "type": "text",
+              "text": "if (schema['@graph']) {"
+            },
+            {
+              "type": "text",
+              "text": "schema['@graph'].forEach(item => {"
+            },
+            {
+              "type": "text",
+              "text": "if (item['@type']) allTypes.push(item['@type']);"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "});"
+            },
+            {
+              "type": "text",
+              "text": "return allTypes.some(type => type === typeName);"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Usage:"
+            },
+            {
+              "type": "text",
+              "text": "const hasFAQSchema = hasSchemaType($, 'FAQPage');"
+            },
+            {
+              "type": "text",
+              "text": "FAQ Schema Structure Requirements:"
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@context\": \"https://schema.org\","
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"FAQPage\","
+            },
+            {
+              "type": "text",
+              "text": "\"mainEntity\": ["
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Question\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"Question text here?\","
+            },
+            {
+              "type": "text",
+              "text": "\"acceptedAnswer\": {"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"Answer\","
+            },
+            {
+              "type": "text",
+              "text": "\"text\": \"Answer text here\""
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "]"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - HowTo Schema:"
+            },
+            {
+              "type": "text",
+              "text": "const hasHowToSchema = hasSchemaType($, 'HowTo');"
+            },
+            {
+              "type": "text",
+              "text": "// Additionally check for \"how to\" content presence"
+            },
+            {
+              "type": "text",
+              "text": "const hasHowToContent = mainContent.toLowerCase().includes('how to');"
+            },
+            {
+              "type": "text",
+              "text": "HowTo Schema Structure Requirements:"
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@context\": \"https://schema.org\","
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"HowTo\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"How to optimize for AEO\","
+            },
+            {
+              "type": "text",
+              "text": "\"step\": ["
+            },
+            {
+              "type": "text",
+              "text": "{"
+            },
+            {
+              "type": "text",
+              "text": "\"@type\": \"HowToStep\","
+            },
+            {
+              "type": "text",
+              "text": "\"name\": \"Step 1\","
+            },
+            {
+              "type": "text",
+              "text": "\"text\": \"Add schema markup to your page\""
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "]"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - Lists and Tables:"
+            },
+            {
+              "type": "text",
+              "text": "// Count list elements"
+            },
+            {
+              "type": "text",
+              "text": "const lists = countElements($, 'ul, ol');"
+            },
+            {
+              "type": "text",
+              "text": "const tables = countElements($, 'table');"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function"
+            },
+            {
+              "type": "text",
+              "text": "function countElements($, selector) {"
+            },
+            {
+              "type": "text",
+              "text": "return $(selector).length;"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Why Lists and Tables Matter:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "AI engines can extract list items as individual facts",
+                "Tables provide structured comparisons easily parsed",
+                "Numbered lists signal sequential/prioritized information",
+                "Bullet lists indicate related but non-sequential items"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "5.3 AI Accessibility Analysis (30 points)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "AI Accessibility measures how easily AI engines can identify main content, parse the page structure, and extract information. This includes semantic HTML tags, mobile optimization, heading hierarchy, and image accessibility."
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - Semantic Tags:"
+            },
+            {
+              "type": "text",
+              "text": "// Check for semantic HTML5 elements"
+            },
+            {
+              "type": "text",
+              "text": "const hasMainTag = hasElement($, 'main');"
+            },
+            {
+              "type": "text",
+              "text": "const hasArticleTag = hasElement($, 'article');"
+            },
+            {
+              "type": "text",
+              "text": "// Helper function"
+            },
+            {
+              "type": "text",
+              "text": "function hasElement($, selector) {"
+            },
+            {
+              "type": "text",
+              "text": "return $(selector).length > 0;"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "Semantic Tag Importance:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "<main>: Identifies primary page content (skip navigation, sidebar)",
+                "<article>: Marks self-contained composition (blog post, news article)",
+                "Without these: AI must use heuristics to find main content",
+                "Nested structure: <main> containing <article> is ideal"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - Mobile Friendly:"
+            },
+            {
+              "type": "text",
+              "text": "// Check for viewport meta tag"
+            },
+            {
+              "type": "text",
+              "text": "const viewport = getMetaContent($, 'viewport');"
+            },
+            {
+              "type": "text",
+              "text": "const isMobileFriendly = !!viewport;"
+            },
+            {
+              "type": "text",
+              "text": "// Typical viewport value:"
+            },
+            {
+              "type": "text",
+              "text": "// <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - Heading Hierarchy:"
+            },
+            {
+              "type": "text",
+              "text": "// Count heading elements"
+            },
+            {
+              "type": "text",
+              "text": "const h1Count = countElements($, 'h1');"
+            },
+            {
+              "type": "text",
+              "text": "const h2Count = countElements($, 'h2');"
+            },
+            {
+              "type": "text",
+              "text": "const h3Count = countElements($, 'h3');"
+            },
+            {
+              "type": "text",
+              "text": "// Evaluate hierarchy"
+            },
+            {
+              "type": "text",
+              "text": "const hasProperHierarchy = h1Count === 1 && h2Count > 0;"
+            },
+            {
+              "type": "text",
+              "text": "Detection Algorithm - Image Alt Text:"
+            },
+            {
+              "type": "text",
+              "text": "// Count total images and images with alt text"
+            },
+            {
+              "type": "text",
+              "text": "const images = $('img');"
+            },
+            {
+              "type": "text",
+              "text": "const imagesWithAlt = $('img[alt]');"
+            },
+            {
+              "type": "text",
+              "text": "const imagesTotal = images.length;"
+            },
+            {
+              "type": "text",
+              "text": "const imagesWithAltCount = imagesWithAlt.length;"
+            },
+            {
+              "type": "text",
+              "text": "// Calculate coverage percentage"
+            },
+            {
+              "type": "text",
+              "text": "const altTextCoverage = imagesTotal > 0"
+            },
+            {
+              "type": "text",
+              "text": "? Math.round((imagesWithAltCount / imagesTotal) * 100)"
+            },
+            {
+              "type": "text",
+              "text": ": 0;"
+            },
+            {
+              "type": "text",
+              "text": "Alt Text Best Practices:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Describe image content, not \"image of\" or \"picture of\"",
+                "Include relevant keywords naturally",
+                "Decorative images: Use alt=\"\" (empty string)",
+                "Complex images: Consider detailed descriptions",
+                "Don't leave alt attribute missing - use empty string if decorative"
+              ]
+            }
+          ]
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "The AI Visibility Assessment analyzer is the most sophisticated component of the AEO Suite. It evaluates how effectively content is structured for AI citation by analyzing citation potential, answer structuring, and technical accessibility. This analyzer uses advanced pattern matching, natural language processing heuristics, and structural analysis to predict citation likelihood."
+        },
+        {
+          "type": "text",
+          "text": "Maximum Score: 100 points"
+        },
+        {
+          "type": "text",
+          "text": "Component Allocation:"
+        }
+      ]
+    },
+    {
+      "title": "Implementation Priorities and Workflows",
+      "subsections": [
+        {
+          "title": "Priority 1: Critical Blockers (Fix Immediately)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "These issues prevent AI engines from accessing or understanding your content at all. Address before any other optimization work."
+            }
+          ]
+        },
+        {
+          "title": "Priority 2: Foundation (Week 1-2)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Establish technical foundation that enables AI engines to parse and understand content effectively."
+            }
+          ]
+        },
+        {
+          "title": "Priority 3: Content Optimization (Ongoing)",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Continuous improvement of content quality, structure, and citation potential."
+            }
+          ]
+        }
+      ],
+      "content": []
+    },
+    {
+      "title": "Technical Troubleshooting Guide",
+      "subsections": [
+        {
+          "title": "Issue: Schema Not Detected",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Diagnostic Steps:"
+            },
+            {
+              "type": "text",
+              "text": "1. Validate JSON syntax:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Copy schema to https://jsonlint.com/",
+                "Check for missing commas, quotes, brackets"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "2. Verify script type attribute:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Must be type=\"application/ld+json\"",
+                "NOT type=\"text/javascript\""
+              ]
+            },
+            {
+              "type": "text",
+              "text": "3. Check @type property exists:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Required: \"@type\": \"Article\"",
+                "Case-sensitive"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "4. Ensure @context is present:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Required: \"@context\": \"https://schema.org\""
+              ]
+            },
+            {
+              "type": "text",
+              "text": "5. Place in correct location:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Prefer <head> section",
+                "Or beginning of <body>",
+                "NOT inside <noscript>"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Issue: Low Readability Score",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Flesch Score Calculation:"
+            },
+            {
+              "type": "text",
+              "text": "Flesch = 206.835 - (1.015 \u00d7 ASL) - (84.6 \u00d7 ASW)"
+            },
+            {
+              "type": "text",
+              "text": "where:"
+            },
+            {
+              "type": "text",
+              "text": "ASL = Average Sentence Length"
+            },
+            {
+              "type": "text",
+              "text": "ASW = Average Syllables per Word"
+            },
+            {
+              "type": "text",
+              "text": "To improve score:"
+            },
+            {
+              "type": "text",
+              "text": "1. Reduce average sentence length (target: 15-20 words)"
+            },
+            {
+              "type": "text",
+              "text": "2. Use simpler words (fewer syllables)"
+            },
+            {
+              "type": "text",
+              "text": "3. Break compound sentences into multiple sentences"
+            },
+            {
+              "type": "text",
+              "text": "4. Replace jargon with plain language where possible"
+            }
+          ]
+        },
+        {
+          "title": "Issue: Query Match Shows N/A",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "This is expected behavior when no target keywords are provided."
+            },
+            {
+              "type": "text",
+              "text": "Solution:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Input target keywords when running analysis",
+                "Provide 1-5 primary keywords/phrases",
+                "Keywords should match actual user search queries",
+                "Without keywords, analyzer cannot calculate relevance scores"
+              ]
+            }
+          ]
+        }
+      ],
+      "content": []
+    },
+    {
+      "title": "Technical Reference and Specifications",
+      "subsections": [
+        {
+          "title": "Content Extraction Priority Order",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "// Priority 1: <article> tag"
+            },
+            {
+              "type": "text",
+              "text": "let mainContent = '';"
+            },
+            {
+              "type": "text",
+              "text": "if ($('article').length > 0) {"
+            },
+            {
+              "type": "text",
+              "text": "mainContent = $('article').text();"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Priority 2: <main> tag"
+            },
+            {
+              "type": "text",
+              "text": "else if ($('main').length > 0) {"
+            },
+            {
+              "type": "text",
+              "text": "mainContent = $('main').text();"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            },
+            {
+              "type": "text",
+              "text": "// Priority 3: <body> tag (fallback)"
+            },
+            {
+              "type": "text",
+              "text": "else {"
+            },
+            {
+              "type": "text",
+              "text": "mainContent = $('body').text();"
+            },
+            {
+              "type": "text",
+              "text": "}"
+            }
+          ]
+        },
+        {
+          "title": "Complete Regex Pattern Reference",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Experience Patterns:"
+            },
+            {
+              "type": "text",
+              "text": "/\\bI\\s+(tested|tried|used|experienced|found|discovered)\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwe\\s+(tested|tried|used|implemented|discovered)\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bin\\s+my\\s+experience\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bafter\\s+using\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "Citation Patterns:"
+            },
+            {
+              "type": "text",
+              "text": "/according to/gi"
+            },
+            {
+              "type": "text",
+              "text": "/research shows/gi"
+            },
+            {
+              "type": "text",
+              "text": "/study found/gi"
+            },
+            {
+              "type": "text",
+              "text": "/source:/gi"
+            },
+            {
+              "type": "text",
+              "text": "Question Patterns:"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwhat is\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bhow to\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwhy\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwhen\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwhere\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\bwho\\b/gi"
+            },
+            {
+              "type": "text",
+              "text": "/\\?\\s*$/gm"
+            },
+            {
+              "type": "text",
+              "text": "Statistics Pattern:"
+            },
+            {
+              "type": "text",
+              "text": "/\\b\\d+(\\.\\d+)?%?\\b/g"
+            },
+            {
+              "type": "text",
+              "text": "// Matches:"
+            },
+            {
+              "type": "text",
+              "text": "// - \"42\" (plain number)"
+            },
+            {
+              "type": "text",
+              "text": "// - \"3.14\" (decimal)"
+            },
+            {
+              "type": "text",
+              "text": "// - \"75%\" (percentage)"
+            },
+            {
+              "type": "text",
+              "text": "// - \"1.5 million\" (captured as \"1.5\")"
+            }
+          ]
+        },
+        {
+          "title": "Performance Considerations",
+          "subsections": [],
+          "content": []
+        }
+      ],
+      "content": []
+    },
+    {
+      "title": "Technical Support and Resources",
+      "subsections": [],
+      "content": [
+        {
+          "type": "text",
+          "text": "For technical implementation assistance, integration support, or questions about analyzer algorithms:"
+        },
+        {
+          "type": "text",
+          "text": "Email Support: support@thatworkx.com"
+        },
+        {
+          "type": "text",
+          "text": "Tool Access: https://aeo.thatworkx.com"
+        },
+        {
+          "type": "text",
+          "text": "GitHub Repository: Available to Professional Services clients"
+        },
+        {
+          "type": "text",
+          "text": "Professional Services include custom analyzer development, enterprise API integrations, and white-label implementations. Contact us via the pricing modal or email for custom technical requirements."
+        }
+      ]
+    }
+  ]
+}

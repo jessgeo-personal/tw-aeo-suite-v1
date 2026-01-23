@@ -1,531 +1,505 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
-const helmet = require('helmet');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
-const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 
-// Database
-const connectDB = require('./config/database');
+const { runCompleteAnalysis } = require('./analyzers');
+const { User, Analysis, Usage, OTP, Stats } = require('./models');
+const { 
+  apiLimiter, 
+  extractUser, 
+  checkUsageLimit 
+} = require('./middleware/auth');
+const { sendOTPEmail } = require('./services/emailService');
+const statsRouter = require('./routes/stats');
 
-// Routes
-const authRoutes = require('./routes/auth');
-const usageRoutes = require('./routes/usage');
-// Add with other route imports (around line 14)
-const subscriptionRoutes = require('./routes/subscription');
-const statsRoutes = require('./routes/stats');
-const Stats = require('./models/Stats');
-
-// Middleware
-const { requireAuth, checkUsageLimit, recordUsage } = require('./middleware/auth');
-
-// Original analyzers and utils
-const { fetchPage, normalizeUrl } = require('./utils');
-const { analyzeTechnical } = require('./analyzers/technical');
-const { analyzeContent } = require('./analyzers/content');
-const { analyzeQueryMatch } = require('./analyzers/queryMatch');
-const { analyzeVisibility } = require('./analyzers/visibility');
-
+// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// Trust proxy - CRITICAL for DigitalOcean
-app.set('trust proxy', 1);
-// ============================================================
-// DATABASE CONNECTION
-// ============================================================
-connectDB();
+// Security middleware
+app.use(helmet());
+app.use(mongoSanitize());
 
-// ============================================================
-// MIDDLEWARE
-// ============================================================
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
-// Security - configure helmet to allow cross-origin cookies
-app.use(helmet({
-  contentSecurityPolicy: false,  // May interfere with inline scripts
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
-// CORS - Allow frontend domain with proper credentials support
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',  // Backend itself (for redirects/same-origin)
-  'https://aeo.thatworkx.com',
-  'https://tw-aeo-suite-app-aktwv.ondigitalocean.app',
-  process.env.FRONTEND_URL
-].filter(Boolean);  // Remove undefined/null
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    // Remove trailing slash for comparison
-    const normalizedOrigin = origin.replace(/\/$/, '');
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.some(allowed => allowed === normalizedOrigin || allowed === origin)) {
-      return callback(null, origin);
-    }
-    
-    // For local development, allow any localhost origin
-    if (normalizedOrigin.startsWith('http://localhost:')) {
-      return callback(null, origin);
-    }
-    
-    console.log('[CORS] Blocked origin:', origin);
-    return callback(new Error('CORS not allowed'), false);
-  },
-  credentials: true,  // Allow cookies to be sent
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie'],
-}));
-
-// Body parsing
+// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Determine if running in production
-// Set NODE_ENV=production in DigitalOcean environment variables
-const isProduction = process.env.NODE_ENV === 'production';
-
-console.log('[Server] Starting with config:', {
-  NODE_ENV: process.env.NODE_ENV || 'not set',
-  isProduction,
-  PORT: process.env.PORT
-});
-
-// Session management
-// - Local: proxy handles same-origin, so sameSite: 'lax' works
-// - Production: cross-origin needs sameSite: 'none' + secure: true
+// Session configuration
 app.use(session({
-  name: 'aeo.sid',
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  secret: process.env.SESSION_SECRET || 'aeo-suite-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  proxy: isProduction,  // Trust proxy in production (DigitalOcean)
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    touchAfter: 24 * 3600,
-  }),
   cookie: {
-    secure: isProduction,                      // true for HTTPS in production, false for HTTP locally
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,          // 7 days
-    sameSite: isProduction ? 'none' : 'lax',  // 'none' for cross-origin in production
-    path: '/',
-  },
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  }
 }));
 
-// Debug logging for session (can be removed later)
-app.use((req, res, next) => {
-  if (req.path.includes('/auth') || req.path.includes('/technical') || req.path.includes('/content') || req.path.includes('/query') || req.path.includes('/visibility')) {
-    console.log(`[${req.method}] ${req.path}`, {
-      sessionID: req.sessionID?.substring(0, 8) + '...',
-      userId: req.session?.userId || 'none',
-      cookie: req.headers.cookie ? 'present' : 'missing'
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+  console.error('💡 Make sure your MONGODB_URI in .env is correct');
+  process.exit(1);
+});
+
+app.use('/api/stats', statsRouter);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'AEO Suite API is running',
+    version: '2.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Main analysis endpoint - unified for all 5 analyzers
+app.post('/api/analyze', 
+  apiLimiter, 
+  extractUser, 
+  checkUsageLimit, 
+  async (req, res) => {
+    try {
+      const { url, targetKeywords = [], email } = req.body;
+      
+      // Validate inputs
+      if (!url) {
+        return res.status(400).json({
+          success: false,
+          message: 'URL is required'
+        });
+      }
+      
+      const userEmail = email || req.session?.email;
+      
+      if (!userEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required',
+          requiresEmailCapture: true
+        });
+      }
+      
+      console.log(`Starting analysis for ${url} by ${userEmail}`);
+      
+      // Run complete analysis
+      const result = await runCompleteAnalysis(url, targetKeywords);
+      
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: result.error || 'Analysis failed',
+          error: result.error
+        });
+      }
+      
+      // Get or create user
+      let user = await User.findOne({ email: userEmail.toLowerCase().trim() });
+      
+      // Create analysis record
+      const analysis = new Analysis({
+        userId: user ? user._id : null,
+        email: userEmail.toLowerCase().trim(),
+        url,
+        targetKeywords,
+        overallScore: result.overallScore,
+        technicalFoundation: result.analyzers.technicalFoundation,
+        contentStructure: result.analyzers.contentStructure,
+        pageLevelEEAT: result.analyzers.pageLevelEEAT,
+        queryMatch: result.analyzers.queryMatch,
+        aiVisibility: result.analyzers.aiVisibility,
+        status: 'completed',
+        processingTime: result.processingTime
+      });
+      
+      await analysis.save();
+      
+      // Update usage
+      if (req.usage) {
+        await req.usage.incrementUsage(analysis._id, url);
+      }
+      
+      // Update stats
+      await Stats.incrementAnalysis();
+      await Stats.trackUrl(url);
+      await Stats.updateAverageScore({
+        overall: result.overallScore,
+        technical: result.analyzers.technicalFoundation.score,
+        content: result.analyzers.contentStructure.score,
+        eeat: result.analyzers.pageLevelEEAT.score,
+        queryMatch: result.analyzers.queryMatch.score,
+        visibility: result.analyzers.aiVisibility.score
+      });
+      
+      console.log(`✅ Analysis completed: ${analysis._id}`);
+      
+      // Return results
+      res.json({
+        success: true,
+        message: 'Analysis completed successfully',
+        analysisId: analysis._id,
+        results: {
+          url,
+          targetKeywords,
+          overallScore: result.overallScore,
+          overallGrade: result.overallGrade,
+          analyzers: result.analyzers,
+          recommendations: result.recommendations,
+          weights: result.weights,
+          processingTime: result.processingTime
+        },
+        usage: {
+          current: req.currentUsage + 1,
+          limit: req.dailyLimit,
+          remaining: req.dailyLimit - (req.currentUsage + 1)
+        }
+      });
+      
+    } catch (error) {
+      console.error('Analysis endpoint error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'An error occurred during analysis',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+);
+
+// Request OTP endpoint
+app.post('/api/auth/request-otp', apiLimiter, async (req, res) => {
+  try {
+    const { email, firstName, lastName, country, phone } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+    
+    // Get or create user
+    let user = await User.findOne({ email: email.toLowerCase().trim() });
+    
+    if (!user) {
+      user = new User({
+        email: email.toLowerCase().trim(),
+        firstName: firstName || '',
+        lastName: lastName || '',
+        country: country || 'Not specified',
+        phone: phone || '',
+        isVerified: false
+      });
+      await user.save();
+      
+      console.log(`New user created: ${email}`);
+    }
+    
+    // Generate and send OTP
+    const otpDoc = await OTP.createOTP(email);
+    
+    // Send OTP via Resend email service
+    const emailResult = await sendOTPEmail(email, otpDoc.otp);
+    
+    if (!emailResult.success) {
+      console.error('Failed to send OTP email:', emailResult.error);
+      // Still return success to user, but log the error
+      // In production, you might want to handle this differently
+    }
+    
+    // Also log to console for development/debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📧 OTP for ${email}: ${otpDoc.otp}`);
+    }
+    
+    res.json({
+      success: true,
+      message: 'OTP sent successfully to your email',
+      email: email.toLowerCase().trim()
+    });
+    
+  } catch (error) {
+    console.error('Request OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send OTP'
     });
   }
-  next();
 });
 
-// Rate limiting (general)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests, please try again later',
+// Verify OTP endpoint
+app.post('/api/auth/verify-otp', apiLimiter, async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required'
+      });
+    }
+    
+    // Verify OTP
+    const result = await OTP.verifyOTP(email, otp);
+    
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    
+    // Update user as verified
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (user && !user.isVerified) {
+      user.isVerified = true;
+      user.lastLogin = new Date();
+      await user.save();
+    }
+    
+    // Set session
+    req.session.email = email.toLowerCase().trim();
+    req.session.verified = true;
+    
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      user: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isVerified: user.isVerified,
+        dailyLimit: user.getDailyLimit()
+      }
+    });
+    
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'OTP verification failed'
+    });
+  }
 });
-app.use('/', limiter);
 
-// ============================================================
-// API PREFIX MIDDLEWARE
-// Strips /api prefix for local development compatibility
-// In production, DigitalOcean's ingress already strips it
-// ============================================================
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    req.url = req.url.replace('/api', '');
+// Get session info
+app.get('/api/auth/session', extractUser, async (req, res) => {
+  try {
+    if (!req.session || !req.session.email) {
+      return res.json({
+        success: true,
+        authenticated: false
+      });
+    }
+    
+    const user = await User.findOne({ email: req.session.email });
+    
+    if (!user) {
+      return res.json({
+        success: true,
+        authenticated: false
+      });
+    }
+    
+    // Get today's usage
+    const usage = await Usage.getTodayUsage(user.email);
+    
+    res.json({
+      success: true,
+      authenticated: true,
+      user: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isVerified: user.isVerified,
+        hasSubscription: user.hasActiveSubscription(),
+        dailyLimit: user.getDailyLimit()
+      },
+      usage: {
+        current: usage.count,
+        limit: user.getDailyLimit(),
+        remaining: Math.max(0, user.getDailyLimit() - usage.count)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Session check error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Session check failed'
+    });
   }
-  next();
 });
 
-// ============================================================
-// ROUTES
-// ============================================================
-
-// Auth routes (lead capture, OTP, session)
-app.use('/auth', authRoutes);
-
-// Usage routes (limits, history, email reports)
-app.use('/usage', usageRoutes);
-
-// Add with other route registration (around line 85)
-app.use('/subscription', subscriptionRoutes);
-
-// Stats route (public - no auth)
-app.use('/stats', statsRoutes);
-
-// ============================================================
-// ANALYSIS ENDPOINTS (Protected with auth and limits)
-// ============================================================
-
-/**
- * TOOL 1: Technical AEO Audit
- */
-app.post('/technical', 
-  requireAuth, 
-  checkUsageLimit('technical'),
-  recordUsage('technical'),
-  async (req, res) => {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-
-    try {
-      const targetUrl = normalizeUrl(url);
-      console.log(`\n[Technical Audit] ${targetUrl}`);
-      
-      const { $ } = await fetchPage(targetUrl);
-      const results = analyzeTechnical($, targetUrl);
-      
-      console.log(`[Technical Audit] Complete. Score: ${results.overallScore}/100`);
-      
-      // Increment stats counter
-      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
-      res.json({
-        tool: 'Technical AEO Audit',
-        url: targetUrl,
-        analyzedAt: new Date().toISOString(),
-        ...results,
-      });
-
-    } catch (error) {
-      console.error('[Technical Audit] Error:', error.message);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message;
-      let statusCode = 500;
-      
-      if (error.code === 'ENOTFOUND') {
-        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
-        statusCode = 400;
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-        errorMessage = 'The website took too long to respond. Please try again.';
-        statusCode = 504;
-      } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = 'Connection refused. The website may be down or blocking requests.';
-        statusCode = 503;
-      }
-      
-      res.status(statusCode).json({ 
-        error: 'Analysis failed',
-        message: errorMessage,
-        url 
-      });
-    }
-  }
-);
-
-/**
- * TOOL 2: Content Quality Analyzer
- */
-app.post('/content', 
-  requireAuth, 
-  checkUsageLimit('content'),
-  recordUsage('content'),
-  async (req, res) => {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-
-    try {
-      const targetUrl = normalizeUrl(url);
-      console.log(`\n[Content Analysis] ${targetUrl}`);
-      
-      const { $ } = await fetchPage(targetUrl);
-      const results = analyzeContent($, targetUrl);
-      
-      console.log(`[Content Analysis] Complete. Score: ${results.overallScore}/100`);
-      
-      Stats.incrementAnalyses().catch(err => console.error('Stats error:', err));
-
-      // Increment stats counter
-      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
-
-      res.json({
-        tool: 'Content Quality Analyzer',
-        url: targetUrl,
-        analyzedAt: new Date().toISOString(),
-        ...results,
-      });
-
-    } catch (error) {
-      console.error('[Content Analysis] Error:', error.message);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message;
-      let statusCode = 500;
-      
-      if (error.code === 'ENOTFOUND') {
-        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
-        statusCode = 400;
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-        errorMessage = 'The website took too long to respond. Please try again.';
-        statusCode = 504;
-      } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = 'Connection refused. The website may be down or blocking requests.';
-        statusCode = 503;
-      }
-      
-      res.status(statusCode).json({ 
-        error: 'Analysis failed',
-        message: errorMessage,
-        url 
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: 'Logout failed'
       });
     }
     
-  }
-);
-
-/**
- * TOOL 3: Query Match Analyzer
- */
-app.post('/query-match', 
-  requireAuth, 
-  checkUsageLimit('query-match'),
-  recordUsage('query-match'),
-  async (req, res) => {
-    const { url, queries } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-    
-    if (!queries || !Array.isArray(queries) || queries.length === 0) {
-      return res.status(400).json({ error: 'At least one query is required' });
-    }
-
-    const targetQueries = queries.slice(0, 10).map(q => q.trim()).filter(q => q.length > 0);
-    
-    if (targetQueries.length === 0) {
-      return res.status(400).json({ error: 'At least one valid query is required' });
-    }
-
-    try {
-      const targetUrl = normalizeUrl(url);
-      console.log(`\n[Query Match] ${targetUrl}`);
-      
-      const { $ } = await fetchPage(targetUrl);
-      const results = analyzeQueryMatch($, targetUrl, targetQueries);
-      
-      console.log(`[Query Match] Complete. Overall Match: ${results.overallScore}/100`);
-      
-      // Increment stats counter
-      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
-      res.json({
-        tool: 'Query Match Analyzer',
-        url: targetUrl,
-        analyzedAt: new Date().toISOString(),
-        ...results,
-      });
-
-    } catch (error) {
-      console.error('[Query Match] Error:', error.message);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message;
-      let statusCode = 500;
-      
-      if (error.code === 'ENOTFOUND') {
-        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
-        statusCode = 400;
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-        errorMessage = 'The website took too long to respond. Please try again.';
-        statusCode = 504;
-      } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = 'Connection refused. The website may be down or blocking requests.';
-        statusCode = 503;
-      }
-      
-      res.status(statusCode).json({ 
-        error: 'Analysis failed',
-        message: errorMessage,
-        url 
-      });
-    }
-
-  }
-);
-
-/**
- * TOOL 4: AI Visibility Checker
- */
-app.post('/visibility', 
-  requireAuth, 
-  checkUsageLimit('visibility'),
-  recordUsage('visibility'),
-  async (req, res) => {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-
-    try {
-      const targetUrl = normalizeUrl(url);
-      console.log(`\n[Visibility Check] ${targetUrl}`);
-      
-      const { $ } = await fetchPage(targetUrl);
-      const results = analyzeVisibility($, targetUrl);
-      
-      console.log(`[Visibility Check] Complete. Score: ${results.overallScore}/100`);
-      
-      // Increment stats counter
-      Stats.incrementAnalyses().catch(err => console.error('Stats tracking error:', err));
-      
-      res.json({
-        tool: 'AI Visibility Checker',
-        url: targetUrl,
-        analyzedAt: new Date().toISOString(),
-        ...results,
-      });
-
-    } catch (error) {
-      console.error('[Visibility Check] Error:', error.message);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message;
-      let statusCode = 500;
-      
-      if (error.code === 'ENOTFOUND') {
-        errorMessage = 'Unable to find this website. Please check the URL is correct and the site is online.';
-        statusCode = 400;
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-        errorMessage = 'The website took too long to respond. Please try again.';
-        statusCode = 504;
-      } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = 'Connection refused. The website may be down or blocking requests.';
-        statusCode = 503;
-      }
-      
-      res.status(statusCode).json({ 
-        error: 'Analysis failed',
-        message: errorMessage,
-        url 
-      });
-    }
-
-  }
-);
-
-// ============================================================
-// Health check
-// ============================================================
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    database: require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
   });
 });
 
-// Session debug endpoint
-app.get('/session-debug', (req, res) => {
-  res.json({
-    sessionID: req.sessionID,
-    hasSession: !!req.session,
-    sessionData: {
-      userId: req.session?.userId || null,
-      email: req.session?.email || null,
-      verified: req.session?.verified || false
-    },
-    cookieReceived: !!req.headers.cookie,
-    cookieName: req.headers.cookie ? req.headers.cookie.split(';').find(c => c.trim().startsWith('aeo.sid')) : null,
-    isProduction: process.env.NODE_ENV === 'production',
-    origin: req.headers.origin
-  });
+// Lead form submission endpoint
+const { createOrUpdateContact } = require('./utils/hubspot');
+
+app.post('/api/leads/submit', apiLimiter, async (req, res) => {
+  try {
+    const { email, firstName, lastName, company, phone, country, leadInterest } = req.body;
+    
+    // Validate required fields
+    if (!email || !firstName || !lastName || !company || !country) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    console.log(`📝 Lead form submitted: ${email} - ${leadInterest}`);
+
+    // Create or update user in database
+    let user = await User.findOne({ email: email.toLowerCase().trim() });
+    
+    if (!user) {
+      user = new User({
+        email: email.toLowerCase().trim(),
+        firstName,
+        lastName,
+        company,
+        phone: phone || '',
+        country,
+        isVerified: false
+      });
+      await user.save();
+      console.log(`✅ New user created from lead form: ${email}`);
+    } else {
+      // Update existing user with new information
+      user.firstName = firstName || user.firstName;
+      user.lastName = lastName || user.lastName;
+      user.company = company || user.company;
+      user.phone = phone || user.phone;
+      user.country = country || user.country;
+      await user.save();
+      console.log(`✅ Existing user updated from lead form: ${email}`);
+    }
+
+    // Sync with HubSpot
+    const hubspotResult = await createOrUpdateContact({
+      email: email.toLowerCase().trim(),
+      firstName,
+      lastName,
+      company,
+      phone: phone || '',
+      country,
+      leadInterest
+    });
+
+    if (hubspotResult.success) {
+      // Update user with HubSpot contact ID
+      if (hubspotResult.contactId) {
+        user.hubspotContactId = hubspotResult.contactId;
+        await user.save();
+      }
+      
+      console.log(`✅ Lead synced with HubSpot: ${email}`);
+    } else {
+      console.error(`⚠️ HubSpot sync failed for ${email}:`, hubspotResult.message);
+      // Continue anyway - lead is saved in our database
+    }
+
+    res.json({
+      success: true,
+      message: 'Thank you! We will be in touch at the earliest.',
+      hubspotSynced: hubspotResult.success
+    });
+
+  } catch (error) {
+    console.error('❌ Lead submission error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit lead form. Please try again.'
+    });
+  }
 });
 
-app.get('/', (req, res) => {
-  res.json({
-    name: 'AEO Audit Suite API',
-    version: '2.0.0',
-    status: 'running',
-    endpoints: {
-      auth: [
-        'POST /api/auth/submit-lead',
-        'POST /api/auth/verify-otp',
-        'POST /api/auth/resend-otp',
-        'GET /api/auth/session',
-        'POST /api/auth/logout',
-      ],
-      usage: [
-        'GET /api/usage/limits',
-        'GET /api/usage/history',
-        'POST /api/usage/email-report',
-      ],
-      tools: [
-        'POST /api/technical',
-        'POST /api/content',
-        'POST /api/query-match',
-        'POST /api/visibility',
-      ],
-    },
-  });
+// Get user's analysis history
+app.get('/api/analyses', extractUser, async (req, res) => {
+  try {
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+    
+    const analyses = await Analysis.find({ 
+      email: req.session.email 
+    })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .select('-__v');
+    
+    res.json({
+      success: true,
+      count: analyses.length,
+      analyses
+    });
+    
+  } catch (error) {
+    console.error('Get analyses error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve analyses'
+    });
+  }
 });
 
-// ============================================================
-// Error handling
-// ============================================================
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error('Global error handler:', err);
   res.status(500).json({
     success: false,
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
-// ============================================================
 // Start server
-// ============================================================
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════════════════════════════╗
-║                     AEO AUDIT SUITE v2.0                       ║
-║            Backend Server with Lead Capture & Auth             ║
-╠════════════════════════════════════════════════════════════════╣
-║  Running on: http://localhost:${PORT}                            ║
-║  Environment: ${process.env.NODE_ENV || 'development'}                                       ║
-╠════════════════════════════════════════════════════════════════╣
-║  🔐 Authentication Endpoints:                                  ║
-║     POST /api/auth/submit-lead     - Submit lead & get OTP     ║
-║     POST /api/auth/verify-otp      - Verify OTP & login        ║
-║     POST /api/auth/resend-otp      - Resend OTP                ║
-║     GET  /api/auth/session         - Check session status      ║
-║     POST /api/auth/logout          - Logout                    ║
-║                                                                ║
-║  📊 Usage Endpoints:                                           ║
-║     GET  /api/usage/limits         - Check daily limits        ║
-║     GET  /api/usage/history        - Get usage history         ║
-║     POST /api/usage/email-report   - Email report to user      ║
-║                                                                ║
-║  🔧 Analysis Tools (Protected):                                ║
-║     POST /api/technical            - Technical AEO Audit       ║
-║     POST /api/content              - Content Quality Analyzer  ║
-║     POST /api/query-match          - Query Match Analyzer      ║
-║     POST /api/visibility           - AI Visibility Checker     ║
-╚════════════════════════════════════════════════════════════════╝
-  `);
+  console.log(`🚀 AEO Suite API running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
 });
 
 module.exports = app;

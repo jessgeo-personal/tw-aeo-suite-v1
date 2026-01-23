@@ -1,79 +1,153 @@
 const mongoose = require('mongoose');
 
-/**
- * Stats Model - Single document storing global statistics
- * Used for live counter on landing page and dashboard
- */
 const statsSchema = new mongoose.Schema({
+  date: {
+    type: Date,
+    required: true,
+    unique: true,
+    default: () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return today;
+    }
+  },
+  
+  // Daily metrics
   totalAnalyses: {
     type: Number,
-    default: 950, // Starting value as requested
-    required: true
+    default: 0
   },
-  totalUsers: {
+  uniqueUsers: {
     type: Number,
-    default: 43, // Starting value as requested
-    required: true
+    default: 0
   },
-  lastUpdated: {
+  uniqueEmails: {
+    type: Number,
+    default: 0
+  },
+  anonymousUsers: {
+    type: Number,
+    default: 0
+  },
+  registeredUsers: {
+    type: Number,
+    default: 0
+  },
+  subscribedUsers: {
+    type: Number,
+    default: 0
+  },
+  
+  // Analysis breakdown by type
+  analysisByType: {
+    technical: { type: Number, default: 0 },
+    content: { type: Number, default: 0 },
+    eeat: { type: Number, default: 0 },
+    queryMatch: { type: Number, default: 0 },
+    visibility: { type: Number, default: 0 }
+  },
+  
+  // Top analyzed URLs (array of objects)
+  topUrls: [{
+    url: String,
+    count: Number
+  }],
+  
+  // Average scores
+  averageScores: {
+    overall: { type: Number, default: 0 },
+    technical: { type: Number, default: 0 },
+    content: { type: Number, default: 0 },
+    eeat: { type: Number, default: 0 },
+    queryMatch: { type: Number, default: 0 },
+    visibility: { type: Number, default: 0 }
+  },
+  
+  // Conversion metrics
+  conversions: {
+    emailCaptures: { type: Number, default: 0 },
+    otpVerifications: { type: Number, default: 0 },
+    subscriptionStarts: { type: Number, default: 0 },
+    reportsSent: { type: Number, default: 0 }
+  },
+  
+  // Revenue metrics (if applicable)
+  revenue: {
+    total: { type: Number, default: 0 },
+    monthly: { type: Number, default: 0 },
+    semiAnnual: { type: Number, default: 0 },
+    annual: { type: Number, default: 0 }
+  },
+  
+  createdAt: {
     type: Date,
     default: Date.now
-  },
-  // Cache timestamp for efficient querying
-  cacheUntil: {
-    type: Date,
-    default: () => new Date(Date.now() + 60000) // Cache for 1 minute
   }
+}, {
+  timestamps: true
 });
 
-// Ensure only one document exists
-statsSchema.statics.getSingleton = async function() {
-  let stats = await this.findOne();
+// Index for efficient queries
+statsSchema.index({ date: -1 });
+
+// Static method to get or create today's stats
+statsSchema.statics.getTodayStats = async function() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let stats = await this.findOne({ date: today });
+  
   if (!stats) {
-    stats = await this.create({
-      totalAnalyses: 950,
-      totalUsers: 43
-    });
+    stats = await this.create({ date: today });
   }
+  
   return stats;
 };
 
-// Increment analysis count
-statsSchema.statics.incrementAnalyses = async function() {
-  const stats = await this.getSingleton();
+// Static method to increment analysis count
+statsSchema.statics.incrementAnalysis = async function(analyzerType = null) {
+  const stats = await this.getTodayStats();
   stats.totalAnalyses += 1;
-  stats.lastUpdated = new Date();
-  stats.cacheUntil = new Date(Date.now() + 60000);
-  await stats.save();
-  return stats;
-};
-
-// Increment user count
-statsSchema.statics.incrementUsers = async function() {
-  const stats = await this.getSingleton();
-  stats.totalUsers += 1;
-  stats.lastUpdated = new Date();
-  stats.cacheUntil = new Date(Date.now() + 60000);
-  await stats.save();
-  return stats;
-};
-
-// Get cached stats (returns even if cache expired, but updates in background)
-statsSchema.statics.getCached = async function() {
-  const stats = await this.getSingleton();
   
-  // If cache expired, update it asynchronously
-  if (stats.cacheUntil < new Date()) {
-    stats.cacheUntil = new Date(Date.now() + 60000);
-    stats.save().catch(err => console.error('Failed to update cache timestamp:', err));
+  if (analyzerType && stats.analysisByType[analyzerType] !== undefined) {
+    stats.analysisByType[analyzerType] += 1;
   }
   
-  return {
-    totalAnalyses: stats.totalAnalyses,
-    totalUsers: stats.totalUsers
-  };
+  return await stats.save();
 };
 
-const Stats = mongoose.model('Stats', statsSchema);
+// Static method to update average scores
+statsSchema.statics.updateAverageScore = async function(scores) {
+  const stats = await this.getTodayStats();
+  const currentCount = stats.totalAnalyses || 1;
+  
+  // Recalculate running averages
+  Object.keys(scores).forEach(key => {
+    if (stats.averageScores[key] !== undefined && scores[key] !== undefined) {
+      const currentAvg = stats.averageScores[key] || 0;
+      stats.averageScores[key] = ((currentAvg * (currentCount - 1)) + scores[key]) / currentCount;
+    }
+  });
+  
+  return await stats.save();
+};
 
-module.exports = Stats;
+// Static method to track URL popularity
+statsSchema.statics.trackUrl = async function(url) {
+  const stats = await this.getTodayStats();
+  
+  const existingUrl = stats.topUrls.find(u => u.url === url);
+  if (existingUrl) {
+    existingUrl.count += 1;
+  } else {
+    stats.topUrls.push({ url, count: 1 });
+  }
+  
+  // Sort and keep top 20 URLs
+  stats.topUrls.sort((a, b) => b.count - a.count);
+  stats.topUrls = stats.topUrls.slice(0, 20);
+  
+  return await stats.save();
+};
+
+module.exports = mongoose.model('Stats', statsSchema);

@@ -1,19 +1,25 @@
 {
-  "name": "aeo-suite-frontend",
-  "version": "1.0.0",
+  "name": "aeo-frontend-v2",
+  "version": "2.0.0",
+  "description": "AEO Suite Frontend - Answer Engine Optimization Audit Tool",
   "private": true,
   "dependencies": {
-    "@craco/craco": "^7.1.0",
-    "lucide-react": "^0.263.1",
+    "axios": "^1.13.2",
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1"
+    "react-router-dom": "^6.20.0",
+    "recharts": "^2.10.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "react-scripts": "5.0.1",
+    "tailwindcss": "^3.3.6"
   },
   "scripts": {
-    "tailwind:build": "tailwindcss -i ./src/index.css -o ./src/tailwind.css",
-    "tailwind:watch": "tailwindcss -i ./src/index.css -o ./src/tailwind.css --watch",
-    "start": "npm run tailwind:build && react-scripts start",
-    "build": "npm run tailwind:build && react-scripts build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -34,10 +40,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:3001",
-  "devDependencies": {
-    "autoprefixer": "^10.4.23",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.19"
-  }
+  "proxy": "http://localhost:3001"
 }

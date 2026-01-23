@@ -1,0 +1,1735 @@
+{
+  "title": "Complete Service Guide",
+  "subtitle": "Understanding Your Scores, Recommendations, and Service Options",
+  "audience": "For Business Leaders, Marketers, and Decision Makers",
+  "sections": [
+    {
+      "title": "Executive Summary",
+      "subsections": [],
+      "content": [
+        {
+          "type": "text",
+          "text": "Answer Engine Optimization (AEO) is how your content performs when AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews answer user questions. Unlike traditional SEO, where success means appearing in search results, AEO success means your content is actually cited as the answer."
+        },
+        {
+          "type": "text",
+          "text": "This guide explains what each metric in the AEO Suite measures, why it matters, and how you can improve your visibility in AI-powered search results."
+        }
+      ]
+    },
+    {
+      "title": "Table of Contents",
+      "subsections": [],
+      "content": [
+        {
+          "type": "list",
+          "items": [
+            "1. Understanding Service Tiers",
+            "2. Score Interpretation Guide",
+            "3. Analyzer 1: Technical Foundation",
+            "4. Analyzer 2: Content Structure",
+            "5. Analyzer 3: Page-Level E-E-A-T",
+            "6. Analyzer 4: Query Match Analysis",
+            "7. Analyzer 5: AI Visibility Assessment",
+            "8. Professional Services Deliverables",
+            "9. Frequently Asked Questions"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "1. Understanding Service Tiers",
+      "subsections": [
+        {
+          "title": "Free Tier: Automated Page Analysis",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "What You Get:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "10 analyses per day (registered users)",
+                "Access to all 5 analyzers",
+                "Basic recommendations",
+                "Email support"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What This Means:"
+            },
+            {
+              "type": "text",
+              "text": "The Free tier analyzes a single web page and provides objective, measurable insights about how AI-friendly your content is. Think of it as a health check for one page at a time."
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Testing the tool before committing",
+                "Quick spot-checks on individual pages",
+                "Understanding what AEO optimization involves"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Pro Tier: Unlimited Analysis + Advanced Features",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Pricing:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "$20/month",
+                "$180/year (save $60 - 2 months free)"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What You Get:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Unlimited analyses",
+                "PDF report exports",
+                "Priority email support",
+                "Analysis history tracking",
+                "Trend tracking over time",
+                "Site-level E-E-A-T analysis (up to 15 pages)"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What This Means:"
+            },
+            {
+              "type": "text",
+              "text": "The Pro tier is for ongoing optimization. You can analyze as many pages as needed, track improvements over time, and get professional reports to share with your team. The site-level E-E-A-T analysis checks your About, Contact, and Author pages - critical for Google AI Overviews and Perplexity."
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Content teams optimizing multiple pages",
+                "Marketing managers tracking performance",
+                "SEO professionals managing client work",
+                "Businesses with 15 or fewer key pages"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Professional Services: Expert Implementation",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "When you need hands-on expertise, strategic guidance, or lack the technical resources to implement recommendations yourself, our professional services provide complete solutions."
+            },
+            {
+              "type": "text",
+              "text": "What You Get:"
+            },
+            {
+              "type": "text",
+              "text": "Professional services include comprehensive PDF reports with recommendations, actual implementation of changes to your website, and ongoing consultation. For Full AEO Implementation, you also receive a dedicated AEO consultant who works with your team throughout the engagement."
+            }
+          ]
+        }
+      ],
+      "content": []
+    },
+    {
+      "title": "2. Score Interpretation Guide",
+      "subsections": [],
+      "content": [
+        {
+          "type": "text",
+          "text": "Every analysis produces scores from 0-100 for each analyzer. Here's how to interpret them:"
+        },
+        {
+          "type": "text",
+          "text": "Important Note:"
+        },
+        {
+          "type": "text",
+          "text": "Each analyzer has different maximum possible scores based on the number and weight of factors measured. Some analyzers max out at 100 points while others have components worth 25-40 points each."
+        }
+      ]
+    },
+    {
+      "title": "3. Analyzer 1: Technical Foundation",
+      "subsections": [
+        {
+          "title": "What We Measure (Maximum: 100 points)",
+          "subsections": [
+            {
+              "title": "Schema Markup (40 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Schema markup is structured data that tells AI engines what your content is about without having to guess. It's like adding labels to everything on your page."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Presence of any structured data (JSON-LD format)",
+                    "Types of schema present (Article, Product, FAQPage, etc.)",
+                    "Author/Organization markup for credibility"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines rely heavily on schema markup because it provides explicit, machine-readable information. Pages with proper schema are much more likely to be cited because the AI doesn't have to interpret your content - you've told it exactly what everything is."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add JSON-LD schema markup to your page <head> section",
+                    "Include Article schema for blog posts and news content",
+                    "Add FAQPage schema if you have Q&A content",
+                    "Include Person or Organization schema with author.url for credibility"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Crawlability (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Crawlability determines whether AI engines are allowed to access and index your page. Without this, you won't show up in AI-powered search at all."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Meta robots tag (noindex blocks AI access)",
+                    "Canonical URL (prevents duplicate content issues)",
+                    "Internal links (helps AI discover related content)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "If your page has a \"noindex\" directive, AI engines won't include it in their knowledge base at all. This is the #1 reason pages don't appear in AI search results."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Remove any <meta name=\"robots\" content=\"noindex\"> tags",
+                    "Add canonical URL: <link rel=\"canonical\" href=\"your-url\">",
+                    "Include 3-5 contextual internal links to related pages"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "HTML Structure (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Proper HTML structure helps AI engines quickly understand your page topic and organization. Good structure = better comprehension = higher citation likelihood."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Title tag quality and length",
+                    "Meta description presence and length",
+                    "Heading hierarchy (H1, H2, H3 structure)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines scan pages rapidly. Clear HTML structure with one H1 and logical H2/H3 subheadings helps them quickly understand your content organization and extract relevant information."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Keep title tags between 30-60 characters",
+                    "Write meta descriptions between 120-160 characters",
+                    "Use exactly one H1 tag for your main topic",
+                    "Add H2 and H3 subheadings to organize content sections"
+                  ]
+                }
+              ]
+            }
+          ],
+          "content": []
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "This analyzer checks if AI search engines can properly access, understand, and parse your page structure. Think of it as the foundation - without this, nothing else matters."
+        }
+      ]
+    },
+    {
+      "title": "4. Analyzer 2: Content Structure",
+      "subsections": [
+        {
+          "title": "What We Measure (Maximum: 100 points)",
+          "subsections": [
+            {
+              "title": "Machine Readability (35 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Machine readability measures how easily AI models can process and understand your content. This is different from human readability - it focuses on content length, complexity, and structure."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Word count (total content length)",
+                    "Reading time estimate",
+                    "Flesch Reading Ease Score",
+                    "Paragraph structure and average length"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Understanding Flesch Score:"
+                },
+                {
+                  "type": "text",
+                  "text": "The Flesch Reading Ease Score ranges from 0-100. It's calculated based on sentence length and syllables per word. Higher scores = easier to read."
+                },
+                {
+                  "type": "text",
+                  "text": "Optimal Targets:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Word count: 1,000+ words for comprehensive coverage",
+                    "Flesch score: 60-70 (Standard reading level)",
+                    "Paragraph length: 50-150 words average"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI models process content more effectively when it's substantial (1000+ words) yet readable. Too short lacks depth; too complex reduces comprehension. The Flesch score helps ensure your content hits the sweet spot."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Expand thin content to at least 1,000 words",
+                    "Break long sentences into shorter ones",
+                    "Use simpler words where possible without losing meaning",
+                    "Keep paragraphs between 3-5 sentences (50-150 words)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\u2705 Pro Tip:"
+                },
+                {
+                  "type": "text",
+                  "text": "Professional Services - Content Optimization: We rewrite existing content to improve machine readability while maintaining your brand voice and expertise. This includes breaking complex sentences, adding transition phrases, and restructuring paragraphs for optimal AI parsing."
+                }
+              ]
+            },
+            {
+              "title": "Q&A Patterns (35 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines love content structured as questions and answers because it directly matches how users search. This analyzer checks if your content follows natural Q&A patterns."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Question patterns (What is, How to, Why, When, Where, Who)",
+                    "FAQ schema markup presence",
+                    "Clear answer patterns (questions followed by direct answers)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "When users ask questions to AI search engines, the AI looks for content that already answers those questions directly. Content with clear Q&A structure is exponentially more likely to be cited."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add an FAQ section to your page",
+                    "Use questions as H2 or H3 headings",
+                    "Provide direct, concise answers immediately after each question",
+                    "Implement FAQPage schema markup for Q&A sections"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\u2705 Pro Tip:"
+                },
+                {
+                  "type": "text",
+                  "text": "Professional Services - Content Optimization: We analyze search query intent and transform your content into question-answer format that matches what users actually ask. This includes proper FAQPage schema implementation."
+                }
+              ]
+            },
+            {
+              "title": "Factual Density (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Factual density measures how much concrete, citable information your content contains. AI engines prefer dense, fact-rich content over general statements."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Statistics and numbers (percentages, data points)",
+                    "List items (bullet points and numbered lists)",
+                    "Citation patterns (\"according to\", \"research shows\", \"study found\")"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as a Statistic:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Numbers with units: \"75 minutes\", \"23 pages\"",
+                    "Percentages: \"85% of users\"",
+                    "Data points: \"increased by 150%\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as a Citation:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Attribution phrases: \"According to [Source]\"",
+                    "Research mentions: \"Research shows that...\"",
+                    "Study references: \"A 2024 study found...\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines are more confident citing content that includes specific data, organized lists, and references to authoritative sources. Vague statements are rarely cited; specific facts are."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add specific numbers and percentages to support claims",
+                    "Use bullet points and numbered lists for key information",
+                    "Reference research and attribute information to sources",
+                    "Replace general statements with specific data points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\u2705 Pro Tip:"
+                },
+                {
+                  "type": "text",
+                  "text": "Professional Services - Content Optimization: We research and add relevant statistics, create structured lists, and source authoritative citations to dramatically increase your factual density score and AI citation potential."
+                }
+              ]
+            }
+          ],
+          "content": []
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "This analyzer evaluates how your content is organized and whether it's optimized for AI comprehension. AI engines prefer content that is scannable, well-structured, and information-dense."
+        }
+      ]
+    },
+    {
+      "title": "5. Analyzer 3: Page-Level E-E-A-T",
+      "subsections": [
+        {
+          "title": "What We Measure (Maximum: 100 points)",
+          "subsections": [
+            {
+              "title": "Experience Signals (25 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Experience signals show that the content creator has first-hand knowledge or direct experience with the topic. AI engines heavily favor content from people who have actually done or tested something."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Experience indicators - phrases showing first-hand experience",
+                    "Media count - images, screenshots, charts showing evidence"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Experience Indicators:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "\"I tested...\", \"We tried...\", \"In my experience...\"",
+                    "\"After using...\", \"We discovered...\", \"I found that...\"",
+                    "Personal anecdotes about testing or implementation"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Media Evidence:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Original photos showing the product/process",
+                    "Screenshots of results or data",
+                    "Charts visualizing test results",
+                    "Behind-the-scenes images"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "Google's documentation explicitly states that AI Overviews prioritize content demonstrating first-hand experience. Generic advice ranks lower than \"I tested this and here's what happened.\""
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add personal testing experiences and results",
+                    "Include original photos or screenshots as proof",
+                    "Use first-person language: \"I tested\", \"We found\", \"In our experience\"",
+                    "Share specific outcomes from personal experience"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Expertise Signals (25 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Expertise signals demonstrate that the content creator has specialized knowledge, credentials, or qualifications in the topic area."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Author information presence (byline, bio, schema)",
+                    "Credential mentions in content"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Author Information:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Author byline on the page",
+                    "Author bio section",
+                    "Person schema markup with author details",
+                    "Article:author meta tag"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Credentials:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Degrees: PhD, MD, MBA, etc.",
+                    "Certifications: certified, licensed, accredited",
+                    "Experience: \"15 years of experience\", \"expert in\"",
+                    "Specializations: \"specialized in\", \"focuses on\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines need to determine if the author is qualified to write about the topic. Medical advice from a doctor is weighted differently than from a blogger. Clear expertise signals build trust."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add clear author bylines to all content",
+                    "Implement Person schema with author.url and credentials",
+                    "Mention relevant credentials in author bios or content",
+                    "Include \"years of experience\" or specialization statements"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Authoritativeness Signals (25 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Authoritativeness shows that your content is backed by research, links to credible sources, and is kept current. It's about being a reliable source of information."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "External links to authoritative sources",
+                    "Authority domain links (.gov, .edu, research sites)",
+                    "Last updated date presence and recency"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Authoritative Sources:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Government sites (.gov) - CDC, NIH, etc.",
+                    "Educational institutions (.edu)",
+                    "Peer-reviewed research",
+                    "Major established organizations (.org)",
+                    "Industry leaders and primary sources"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Content Freshness:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Updated within 6 months: Full 10 points",
+                    "Updated 6-12 months ago: 5 points",
+                    "Over 12 months old: 0 points (update recommended)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines cross-reference information. Content that links to authoritative sources is seen as more reliable. Regular updates signal that the information is current and maintained."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Link to 3-5 authoritative sources (.gov, .edu, research)",
+                    "Add article:modified_time meta tag when updating content",
+                    "Update content regularly (every 6 months minimum)",
+                    "Use <time datetime=\"\"> tags for publish/update dates"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Trustworthiness Signals (25 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Trustworthiness signals show that your site is secure, transparent, and legitimate. These are basic credibility factors that all professional sites should have."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "HTTPS (secure connection)",
+                    "Contact information availability",
+                    "Privacy policy link presence"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Contact Information:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Email address (mailto: links)",
+                    "Contact form or link",
+                    "\"Contact\" text in footer or header",
+                    "<address> HTML element"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines assess whether a site is trustworthy before citing it. No HTTPS = immediate red flag. Missing contact information or privacy policy suggests an unprofessional or potentially unreliable source."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "CRITICAL: Enable HTTPS with SSL certificate",
+                    "Add contact email or form links",
+                    "Create and link to privacy policy",
+                    "Link to terms of service if applicable"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\ud83d\udca1 Important Note:"
+                },
+                {
+                  "type": "text",
+                  "text": "Page-level E-E-A-T only checks the specific page. For comprehensive E-E-A-T including About, Contact, and Author pages across your site, you need the Pro tier (up to 15 pages) or Professional Services (unlimited pages)."
+                }
+              ]
+            }
+          ],
+          "content": []
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "E-E-A-T stands for Experience, Expertise, Authoritativeness, and Trustworthiness. This analyzer evaluates signals on the specific page that establish credibility and authority. These factors are critical for Google AI Overviews and Perplexity."
+        }
+      ]
+    },
+    {
+      "title": "6. Analyzer 4: Query Match Analysis",
+      "subsections": [
+        {
+          "title": "What We Measure (Maximum: 100 points)",
+          "subsections": [
+            {
+              "title": "Keyword Presence (40 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Keyword presence checks where your target keywords appear on the page. Strategic placement in key locations signals relevance to AI engines."
+                },
+                {
+                  "type": "text",
+                  "text": "Where We Check (per keyword):"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Title tag - 5 points",
+                    "H1 heading - 5 points",
+                    "Meta description - 3 points",
+                    "First paragraph - 3 points",
+                    "Any H2/H3 heading - 2 points",
+                    "3+ mentions in content - 2 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "How Scoring Works:"
+                },
+                {
+                  "type": "text",
+                  "text": "Each keyword can earn up to 20 points based on where it appears. If you enter 3 keywords, the maximum is 60 points, which is then normalized to 40 points. This means strategic placement matters more than keyword quantity."
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines look for keywords in specific strategic locations. A keyword in your title and H1 carries much more weight than buried in paragraph 10. This analyzer shows you exactly where you're missing critical placements."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Include primary keyword in title tag",
+                    "Use primary keyword in H1 heading",
+                    "Mention keyword in first paragraph",
+                    "Include keyword in meta description",
+                    "Use keyword naturally 3-5 times throughout content"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Answer Positioning (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Answer positioning checks if your content provides answers early in the page. AI engines prefer \"front-loaded\" answers - information that appears in the first 100 words."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Keyword appears in first 100 words - 15 points",
+                    "Direct answer patterns present - 15 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Direct Answer Patterns:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "\"[Keyword] is...\" or \"[Keyword] are...\"",
+                    "\"The answer is...\"",
+                    "\"In short...\" or \"To summarize...\"",
+                    "Definition statements"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "When users ask AI engines a question, they want immediate answers. Content that buries answers deep in the page performs poorly. AI engines scan the beginning first - if the answer isn't there, they may move to another source."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Answer the main query in the first 100 words",
+                    "Use direct statement: \"The answer is...\"",
+                    "Provide a summary/key takeaway at the beginning",
+                    "Then elaborate with details below"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Semantic Relevance (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Semantic relevance checks if your content covers the topic comprehensively using related terms, variations, and contextual information."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Semantic variations (plurals, prefixes, related phrases) - 15 points",
+                    "Topical depth indicators - 15 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Topical Depth Indicators:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "\"benefits\", \"advantages\"",
+                    "\"drawbacks\", \"disadvantages\"",
+                    "\"how to\", \"examples\"",
+                    "\"types\", \"comparison\"",
+                    "\"best practices\", \"tips\", \"guide\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "Comprehensive coverage signals expertise. AI engines favor content that addresses a topic from multiple angles - benefits AND drawbacks, theory AND examples, overview AND detailed guide."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Use plural and singular variations naturally",
+                    "Include sections on benefits and drawbacks",
+                    "Provide examples and comparisons",
+                    "Add \"how to\" sections with step-by-step guidance",
+                    "Cover different types or categories within the topic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\u2705 Pro Tip:"
+                },
+                {
+                  "type": "text",
+                  "text": "Professional Services - Content Optimization: We perform query research to identify the actual phrases users search for, then optimize your content to match those queries precisely while covering all semantic variations."
+                }
+              ]
+            }
+          ],
+          "content": []
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "This analyzer evaluates how well your content matches specific search queries or keywords. It only runs if you provide target keywords - otherwise you'll see \"N/A\" scores."
+        },
+        {
+          "type": "text",
+          "text": "\u26a0\ufe0f Important:\n This analyzer requires you to input target keywords. Without keywords, all scores show as N/A."
+        }
+      ]
+    },
+    {
+      "title": "7. Analyzer 5: AI Visibility Assessment",
+      "subsections": [
+        {
+          "title": "What We Measure (Maximum: 100 points)",
+          "subsections": [
+            {
+              "title": "Citation Potential (35 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Citation potential measures how many \"citable sentences\" your content contains - statements that AI engines can extract and quote directly."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Citable sentences (concise, fact-dense statements) - 15 points",
+                    "Attributed statements (research citations) - 10 points",
+                    "Original insights (unique findings) - 10 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Makes a Sentence Citable:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Length: 20-150 characters (concise but complete)",
+                    "Declarative statements: \"[Thing] is [definition]\"",
+                    "Contains statistics: \"75% of users prefer...\"",
+                    "Attribution patterns: \"According to [source]...\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Attributed Statements:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "\"According to [Name/Organization]...\"",
+                    "\"[Expert] stated that...\"",
+                    "\"Research by...\" or \"Study from...\""
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "What Counts as Original Insights:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "\"I found that...\" or \"Our research shows...\"",
+                    "\"In our experience...\" or \"We discovered...\"",
+                    "Unique findings not available elsewhere"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Scoring Breakdown:"
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI engines need clear, extractable statements to cite. Long rambling paragraphs are hard to quote. Short, definitive statements with attribution are perfect for AI citations."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Write in short, declarative sentences",
+                    "Include specific statistics and data",
+                    "Attribute information to credible sources",
+                    "Share unique insights from your experience",
+                    "Avoid vague statements - be specific and concrete"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Structured Answers (35 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "Structured answers use schema markup and HTML elements to explicitly organize information in AI-friendly formats."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "FAQ schema presence - 15 points",
+                    "HowTo schema presence - 10 points",
+                    "Lists and tables - 10 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Schema Types That Help AI Engines:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "FAQPage: Marks questions and answers explicitly",
+                    "HowTo: Structures step-by-step instructions",
+                    "These provide machine-readable structure"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Structural Elements We Look For:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Bullet lists (<ul>) or numbered lists (<ol>)",
+                    "Data tables (<table>)",
+                    "At least 2 lists or 1 table for full points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "Schema markup explicitly tells AI engines \"this is a question\" and \"this is the answer\". Without schema, AI must interpret HTML. With schema, everything is unambiguous. Lists and tables make information scannable and extractable."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Add FAQPage schema for any Q&A content",
+                    "Implement HowTo schema for instructional content",
+                    "Use bullet points for lists of items",
+                    "Create tables for comparing data or options"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "AI Accessibility (30 points)",
+              "subsections": [],
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What This Means:"
+                },
+                {
+                  "type": "text",
+                  "text": "AI accessibility measures how easily AI engines can identify and extract your main content from all the other elements on your page (navigation, sidebars, ads, etc.)."
+                },
+                {
+                  "type": "text",
+                  "text": "Components We Check:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Semantic HTML tags (<main>, <article>) - 10 points",
+                    "Mobile-friendly (viewport meta tag) - 5 points",
+                    "Proper heading hierarchy - 8 points",
+                    "Image alt text coverage - 7 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Semantic Tags Explained:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "<main>: Marks the primary content area",
+                    "<article>: Marks the main article/post content",
+                    "Having both clearly identifies your main content"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Heading Hierarchy Requirements:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Exactly one H1 tag (main topic)",
+                    "Multiple H2 tags (subsections)",
+                    "Optional H3 tags (sub-subsections)"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Alt Text Coverage:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "90%+ of images have alt text: 7 points",
+                    "50-89% of images have alt text: 4 points",
+                    "Below 50%: 0 points"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Why This Matters:"
+                },
+                {
+                  "type": "text",
+                  "text": "Without semantic tags, AI engines must guess which content is main vs. navigation. With proper tags, they know exactly where to look. Heading hierarchy provides a content outline. Alt text describes images for AI understanding."
+                },
+                {
+                  "type": "text",
+                  "text": "How to Improve:"
+                },
+                {
+                  "type": "list",
+                  "items": [
+                    "Wrap main content in <main> and <article> tags",
+                    "Add viewport meta tag: <meta name=\"viewport\" content=\"width=device-width\">",
+                    "Use exactly one H1, multiple H2s, and H3s as needed",
+                    "Add descriptive alt=\"\" attributes to all images"
+                  ]
+                }
+              ]
+            }
+          ],
+          "content": []
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "This analyzer evaluates how likely your content is to be cited by AI search engines. It checks if your content is structured in ways that AI engines can easily extract, quote, and reference."
+        }
+      ]
+    },
+    {
+      "title": "8. Professional Services Deliverables",
+      "subsections": [
+        {
+          "title": "Technical AEO Audit - $2,000",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Timeline:\n Usually 2-3 weeks from project kickoff"
+            },
+            {
+              "type": "text",
+              "text": "Deliverable Format:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Comprehensive PDF audit report (30-50 pages)",
+                "Implementation roadmap (prioritized task list)",
+                "Code examples and snippets for all recommendations"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What's Included:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Full schema markup implementation plan",
+                "Technical SEO audit specific to AI crawlers",
+                "HTML structure optimization recommendations",
+                "Crawlability enhancement strategies",
+                "Custom schema recommendations for your industry",
+                "90-day implementation roadmap with priorities"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Sites with significant technical issues (scores below 60)",
+                "Teams with developers who can implement recommendations",
+                "Companies wanting a clear technical roadmap"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Content Optimization - $1,500",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Timeline:\n Usually 1-2 weeks from project kickoff"
+            },
+            {
+              "type": "text",
+              "text": "Deliverable Format:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "PDF content analysis report (20-40 pages)",
+                "Rewritten content samples (2-3 pages)",
+                "Citation and reference recommendations"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What's Included:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Content structure analysis and recommendations",
+                "E-E-A-T signal enhancement strategies",
+                "Question-answer optimization",
+                "Factual density improvement guidance",
+                "Citation-worthy content creation framework",
+                "Ongoing content strategy and templates"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Content-heavy sites needing structure improvements",
+                "Companies with in-house writers who can implement changes",
+                "Sites with good technical foundation but poor content optimization"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Full AEO Implementation - $5,000",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Timeline:\n Usually 4-6 weeks from project kickoff"
+            },
+            {
+              "type": "text",
+              "text": "Deliverable Format:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Comprehensive PDF reports (Technical + Content)",
+                "Implemented changes on your website",
+                "Dedicated AEO consultant throughout engagement",
+                "Monthly optimization reports (3 months)"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What's Included:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Everything in Technical AEO Audit",
+                "Everything in Content Optimization",
+                "Plus: Actual implementation of recommendations",
+                "Competitor analysis and positioning strategy",
+                "Query match optimization",
+                "AI visibility enhancement implementation",
+                "3 months of performance monitoring",
+                "Monthly optimization reports with new recommendations",
+                "Dedicated consultant for strategy calls and guidance"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Companies lacking technical resources for implementation",
+                "Sites requiring comprehensive transformation",
+                "Businesses wanting ongoing optimization support",
+                "High-stakes projects where performance matters significantly"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Monthly Retainer - $150/month",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Timeline:\n Ongoing monthly service"
+            },
+            {
+              "type": "text",
+              "text": "Deliverable Format:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Monthly PDF optimization reports",
+                "Quarterly strategy consultation calls"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "What's Included:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "2 page analyses per month",
+                "Monthly optimization recommendations",
+                "Performance monitoring and tracking",
+                "Priority email support",
+                "Quarterly 30-minute strategy calls"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Best For:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Maintaining optimization after initial implementation",
+                "Regular monitoring and adjustment",
+                "Ongoing guidance for content teams"
+              ]
+            }
+          ]
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "When you engage our Professional Services, here's exactly what you receive and the format of deliverables."
+        }
+      ]
+    },
+    {
+      "title": "9. Frequently Asked Questions",
+      "subsections": [
+        {
+          "title": "About Scores and Metrics",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Q: What's a \"good\" overall score?"
+            },
+            {
+              "type": "text",
+              "text": "A: 80+ is excellent, 60-79 is good with room for improvement, 40-59 needs significant work, and below 40 indicates critical issues. Most sites start in the 40-60 range."
+            },
+            {
+              "type": "text",
+              "text": "Q: Why does my Query Match show \"N/A\"?"
+            },
+            {
+              "type": "text",
+              "text": "A: Query Match requires you to input target keywords. Without keywords, this analyzer cannot calculate scores. Enter your target keywords when running an analysis to get Query Match results."
+            },
+            {
+              "type": "text",
+              "text": "Q: Why is my Technical Foundation score low even though my page loads fine?"
+            },
+            {
+              "type": "text",
+              "text": "A: Technical Foundation primarily measures schema markup, not page speed. Most sites lack proper structured data, which is why scores are often low. The good news: adding schema is usually straightforward."
+            },
+            {
+              "type": "text",
+              "text": "Q: What's the difference between Page-Level E-E-A-T and Site-Level E-E-A-T?"
+            },
+            {
+              "type": "text",
+              "text": "A: Page-level (Free tier) only checks the specific page analyzed. Site-level (Pro tier) checks your About, Contact, and Author pages across your entire site - these factors are especially important for Google AI Overviews and Perplexity."
+            }
+          ]
+        },
+        {
+          "title": "About Service Tiers",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Q: Can I upgrade from Free to Pro?"
+            },
+            {
+              "type": "text",
+              "text": "A: Yes! Upgrade anytime through the pricing modal. Your past analyses are preserved and you'll immediately get unlimited analyses, PDF exports, and site-level analysis."
+            },
+            {
+              "type": "text",
+              "text": "Q: What's the difference between Pro ($20/month) and Professional Services (starting at $1,500)?"
+            },
+            {
+              "type": "text",
+              "text": "A: Pro gives you the tools to analyze and understand issues yourself. Professional Services means we actually fix the issues for you. Pro is self-service analysis; Professional Services is hands-on implementation by experts."
+            },
+            {
+              "type": "text",
+              "text": "Q: Do I need Pro if I'm getting Professional Services?"
+            },
+            {
+              "type": "text",
+              "text": "A: Not necessarily. Professional Services include comprehensive analysis. However, many clients keep Pro for ongoing monitoring after implementation. The Monthly Retainer ($150) is designed for post-implementation maintenance."
+            }
+          ]
+        },
+        {
+          "title": "About Implementation",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Q: Can I implement the recommendations myself?"
+            },
+            {
+              "type": "text",
+              "text": "A: Absolutely! The Free and Pro tiers provide actionable recommendations with code examples. If you have technical resources (developers, SEO specialists), you can implement everything yourself. Professional Services are for when you lack resources or want expert implementation."
+            },
+            {
+              "type": "text",
+              "text": "Q: How long does it take to see improvements after implementing recommendations?"
+            },
+            {
+              "type": "text",
+              "text": "A: Technical improvements (schema, HTML structure) can show impact within 2-4 weeks as AI engines re-crawl your site. Content improvements may take 1-2 months to fully reflect in AI citations. This varies by AI engine - Google AI Overviews typically respond faster than others."
+            },
+            {
+              "type": "text",
+              "text": "Q: Which recommendations should I prioritize first?"
+            },
+            {
+              "type": "text",
+              "text": "A: Start with items marked \"CRITICAL\" in the recommendations. These typically include: removing noindex directives, adding schema markup, and ensuring proper title/H1 tags. After critical issues, work on E-E-A-T signals, then content structure improvements."
+            }
+          ]
+        },
+        {
+          "title": "About Results and AI Engines",
+          "subsections": [],
+          "content": [
+            {
+              "type": "text",
+              "text": "Q: Will this guarantee my content appears in AI search results?"
+            },
+            {
+              "type": "text",
+              "text": "A: No tool can guarantee AI citations. However, following these recommendations significantly increases your likelihood of being cited. AI engines use many factors beyond what any tool can measure (domain authority, user engagement, competitive landscape), but these optimizations give you the best possible foundation."
+            },
+            {
+              "type": "text",
+              "text": "Q: Which AI engine does this optimize for?"
+            },
+            {
+              "type": "text",
+              "text": "A: All of them. While Google AI Overviews, Perplexity, and ChatGPT have some differences, they share core requirements: structured data, clear content, E-E-A-T signals, and machine readability. Our recommendations cover the universal factors that all AI engines value."
+            },
+            {
+              "type": "text",
+              "text": "Q: How is this different from regular SEO?"
+            },
+            {
+              "type": "text",
+              "text": "A: Traditional SEO optimizes for appearing in search results listings. AEO optimizes for being cited as the answer by AI engines. The focus shifts from rankings to citations, from keywords to questions, and from backlinks to first-hand experience. Many traditional SEO practices still apply, but AEO adds new layers of optimization."
+            }
+          ]
+        }
+      ],
+      "content": []
+    },
+    {
+      "title": "Need Help?",
+      "subsections": [],
+      "content": [
+        {
+          "type": "text",
+          "text": "We're here to support your AEO journey. Whether you have questions about your scores, need help understanding recommendations, or want to discuss Professional Services:"
+        },
+        {
+          "type": "text",
+          "text": "Email Support:\n support@thatworkx.com"
+        },
+        {
+          "type": "text",
+          "text": "Professional Services Inquiries:\n Use the \"Request Quote\" button in the pricing modal or email support@thatworkx.com"
+        },
+        {
+          "type": "text",
+          "text": "Tool Access:\n https://aeo.thatworkx.com"
+        },
+        {
+          "type": "text",
+          "text": "Thank you for using the AEO Suite. We look forward to helping you succeed in AI-powered search!"
+        }
+      ]
+    }
+  ]
+}

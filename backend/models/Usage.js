@@ -1,127 +1,100 @@
-/**
- * Usage Model
- * Tracks tool usage per user per day (Dubai timezone)
- */
-
 const mongoose = require('mongoose');
 
 const usageSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    default: null // Null for anonymous users
   },
   email: {
     type: String,
     required: true,
     lowercase: true,
-  },
-  tool: {
-    type: String,
-    required: true,
-    enum: ['technical', 'content', 'query-match', 'visibility'],
-  },
-  url: {
-    type: String,
-    required: true,
+    trim: true
   },
   date: {
-    type: String, // Format: YYYY-MM-DD (Dubai timezone)
-    required: true,
-  },
-  timestamp: {
     type: Date,
-    default: Date.now,
+    required: true,
+    default: () => {
+      // Set to Dubai timezone midnight (UTC+4)
+      const now = new Date();
+      const dubaiOffset = 4 * 60; // Dubai is UTC+4
+      const localOffset = now.getTimezoneOffset();
+      const dubaiTime = new Date(now.getTime() + (dubaiOffset + localOffset) * 60000);
+      dubaiTime.setHours(0, 0, 0, 0);
+      return dubaiTime;
+    }
   },
-  results: {
-    type: mongoose.Schema.Types.Mixed, // Store the analysis results
+  count: {
+    type: Number,
+    default: 0,
+    min: 0
   },
+  analyses: [{
+    analysisId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Analysis'
+    },
+    url: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }]
+}, {
+  timestamps: true
 });
 
 // Compound index for efficient daily usage queries
-usageSchema.index({ userId: 1, tool: 1, date: 1 });
-usageSchema.index({ email: 1, date: 1 });
-usageSchema.index({ timestamp: -1 });
+usageSchema.index({ email: 1, date: 1 }, { unique: true });
+usageSchema.index({ userId: 1, date: 1 });
+usageSchema.index({ date: -1 });
 
-// Get Dubai date string (UTC+4)
-usageSchema.statics.getDubaiDateString = function() {
-  const now = new Date();
-  // Convert to Dubai time (UTC+4)
-  const dubaiTime = new Date(now.getTime() + (4 * 60 * 60 * 1000));
-  return dubaiTime.toISOString().split('T')[0]; // YYYY-MM-DD
-};
-
-// Check if user has reached daily limit for a tool
-usageSchema.statics.checkDailyLimit = async function(userId, tool) {
-  const today = this.getDubaiDateString();
+// Static method to get today's usage for an email (Dubai timezone)
+usageSchema.statics.getTodayUsage = async function(email) {
+  const today = this.getDubaiMidnight();
   
-  const count = await this.countDocuments({
-    userId,
-    tool,
-    date: today,
+  let usage = await this.findOne({ 
+    email: email.toLowerCase().trim(), 
+    date: today 
   });
-
-  return {
-    used: count,
-    limit: 1,
-    remaining: Math.max(0, 1 - count),
-    canUse: count < 1,
-  };
-};
-
-// Check all tool limits for a user today
-usageSchema.statics.checkAllLimits = async function(userId) {
-  const today = this.getDubaiDateString();
-  const tools = ['technical', 'content', 'query-match', 'visibility'];
   
-  const limits = {};
-  
-  for (const tool of tools) {
-    const count = await this.countDocuments({
-      userId,
-      tool,
+  if (!usage) {
+    usage = await this.create({
+      email: email.toLowerCase().trim(),
       date: today,
+      count: 0,
+      analyses: []
     });
-    
-    limits[tool] = {
-      used: count,
-      limit: 1,
-      remaining: Math.max(0, 1 - count),
-      canUse: count < 1,
-    };
   }
   
-  return limits;
+  return usage;
 };
 
-// Get user's usage history
-usageSchema.statics.getUserHistory = async function(userId, days = 30) {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  
-  return this.find({
-    userId,
-    timestamp: { $gte: startDate },
-  })
-    .sort({ timestamp: -1 })
-    .select('tool url date timestamp')
-    .lean();
+// Static method to get Dubai midnight (today at 00:00 Dubai time)
+usageSchema.statics.getDubaiMidnight = function() {
+  const now = new Date();
+  const dubaiOffset = 4 * 60; // Dubai is UTC+4
+  const localOffset = now.getTimezoneOffset();
+  const dubaiTime = new Date(now.getTime() + (dubaiOffset + localOffset) * 60000);
+  dubaiTime.setHours(0, 0, 0, 0);
+  return dubaiTime;
 };
 
-// Record a new usage
-usageSchema.statics.recordUsage = async function(userId, email, tool, url, results = null) {
-  const today = this.getDubaiDateString();
-  
-  const usage = new this({
-    userId,
-    email,
-    tool,
+// Method to increment usage count
+usageSchema.methods.incrementUsage = async function(analysisId, url) {
+  this.count += 1;
+  this.analyses.push({
+    analysisId,
     url,
-    date: today,
-    results,
+    timestamp: new Date()
   });
-  
-  return usage.save();
+  return await this.save();
+};
+
+// Method to check if user has exceeded daily limit
+usageSchema.methods.hasExceededLimit = function(dailyLimit) {
+  return this.count >= dailyLimit;
 };
 
 module.exports = mongoose.model('Usage', usageSchema);

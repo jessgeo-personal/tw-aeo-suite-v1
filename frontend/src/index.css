@@ -1,59 +1,53 @@
-/* Tailwind CSS Directives - MUST BE FIRST */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===========================================
-   THATWORKX SOLUTIONS - CSS VARIABLES ONLY
-   =========================================== */
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-:root {
-  /* Primary Brand Colors */
-  --primary-blue: #1e40af;
-  --primary-dark: #1e293b;
-  --primary-light: #3b82f6;
-  
-  /* Accent Colors */
-  --accent-teal: #06b6d4;
-  --accent-green: #10b981;
-  --accent-orange: #f59e0b;
-  
-  /* Neutral Gray Scale */
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
-  
-  /* Status Colors */
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #3b82f6;
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-dark-700 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-600;
+  }
 }
 
-/* Minimal base styles that won't conflict with Tailwind */
-body {
+/* Smooth transitions */
+* {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Loading Spinner Animation */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Body styles */
+body {
+  @apply bg-dark-950 text-white;
 }
 
-.spinner {
-  border: 3px solid var(--gray-200);
-  border-top: 3px solid var(--primary-blue);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
+/* Print styles for report export */
+@media print {
+  @page {
+    margin: 1cm;
+  }
+
+  body {
+    @apply bg-white text-black;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break-before {
+    page-break-before: always;
+  }
 }
