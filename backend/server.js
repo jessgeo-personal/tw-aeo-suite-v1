@@ -57,10 +57,10 @@ mongoose.connect(process.env.MONGODB_URI)
   process.exit(1);
 });
 
-app.use('/api/stats', statsRouter);
+app.use('/stats', statsRouter);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'AEO Suite API is running',
@@ -70,7 +70,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Main analysis endpoint - unified for all 5 analyzers
-app.post('/api/analyze', 
+app.post('/analyze', 
   apiLimiter, 
   extractUser, 
   checkUsageLimit, 
@@ -183,7 +183,7 @@ app.post('/api/analyze',
 );
 
 // Request OTP endpoint
-app.post('/api/auth/request-otp', apiLimiter, async (req, res) => {
+app.post('/auth/request-otp', apiLimiter, async (req, res) => {
   try {
     const { email, firstName, lastName, country, phone } = req.body;
     
@@ -244,7 +244,7 @@ app.post('/api/auth/request-otp', apiLimiter, async (req, res) => {
 });
 
 // Verify OTP endpoint
-app.post('/api/auth/verify-otp', apiLimiter, async (req, res) => {
+app.post('/auth/verify-otp', apiLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
     
@@ -296,7 +296,7 @@ app.post('/api/auth/verify-otp', apiLimiter, async (req, res) => {
 });
 
 // Get session info
-app.get('/api/auth/session', extractUser, async (req, res) => {
+app.get('/auth/session', extractUser, async (req, res) => {
   try {
     if (!req.session || !req.session.email) {
       return res.json({
@@ -345,7 +345,7 @@ app.get('/api/auth/session', extractUser, async (req, res) => {
 });
 
 // Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
+app.post('/auth/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
       return res.status(500).json({
@@ -364,7 +364,7 @@ app.post('/api/auth/logout', (req, res) => {
 // Lead form submission endpoint
 const { createOrUpdateContact } = require('./utils/hubspot');
 
-app.post('/api/leads/submit', apiLimiter, async (req, res) => {
+app.post('/leads/submit', apiLimiter, async (req, res) => {
   try {
     const { email, firstName, lastName, company, phone, country, leadInterest } = req.body;
     
@@ -453,7 +453,7 @@ app.post('/api/leads/submit', apiLimiter, async (req, res) => {
 });
 
 // Get user's analysis history
-app.get('/api/analyses', extractUser, async (req, res) => {
+app.get('/analyses', extractUser, async (req, res) => {
   try {
     if (!req.session || !req.session.email) {
       return res.status(401).json({
