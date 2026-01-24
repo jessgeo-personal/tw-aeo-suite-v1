@@ -19,6 +19,9 @@ const statsRouter = require('./routes/stats');
 // Initialize Express app
 const app = express();
 
+// Trust proxy - required for DigitalOcean load balancer
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
