@@ -150,4 +150,38 @@ statsSchema.statics.trackUrl = async function(url) {
   return await stats.save();
 };
 
+// Static method to get cached aggregated stats
+statsSchema.statics.getCached = async function() {
+  try {
+    // Get today's stats
+    const todayStats = await this.getTodayStats();
+    
+    // Get total stats from all time (aggregate from all days)
+    const allTimeStats = await this.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAnalyses: { $sum: '$totalAnalyses' },
+          totalUsers: { $sum: '$uniqueEmails' }
+        }
+      }
+    ]);
+    
+    const totals = allTimeStats.length > 0 ? allTimeStats[0] : { totalAnalyses: 0, totalUsers: 0 };
+    
+    return {
+      totalAnalyses: totals.totalAnalyses || 0,
+      totalUsers: totals.totalUsers || 0,
+      todayAnalyses: todayStats.totalAnalyses || 0
+    };
+  } catch (error) {
+    console.error('Error getting cached stats:', error);
+    return {
+      totalAnalyses: 0,
+      totalUsers: 0,
+      todayAnalyses: 0
+    };
+  }
+};
+
 module.exports = mongoose.model('Stats', statsSchema);
