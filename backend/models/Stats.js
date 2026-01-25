@@ -172,34 +172,50 @@ statsSchema.statics.trackUrl = async function(url) {
 // Static method to get cached aggregated stats
 statsSchema.statics.getCached = async function() {
   try {
-    // Get today's stats
-    const todayStats = await this.getTodayStats();
-    
-    // Get total stats from all time (aggregate from all days)
+    // Get total analyses from stats collection (aggregate all days)
     const allTimeStats = await this.aggregate([
       {
         $group: {
           _id: null,
-          totalAnalyses: { $sum: '$totalAnalyses' },
-          totalUsers: { $sum: '$uniqueEmails' }
+          totalAnalyses: { $sum: '$totalAnalyses' }
         }
       }
     ]);
     
-    const totals = allTimeStats.length > 0 ? allTimeStats[0] : { totalAnalyses: 0, totalUsers: 0 };
+    const totalAnalyses = allTimeStats.length > 0 ? allTimeStats[0].totalAnalyses : 0;
+    
+    // Get total VERIFIED users directly from User collection
+    // This is the accurate count, not from stats
+    const User = require('./User');
+    const totalUsers = await User.countDocuments({ isVerified: true });
+    
+    // Get today's stats
+    const todayStats = await this.getTodayStats();
     
     return {
-      totalAnalyses: totals.totalAnalyses || 0,
-      totalUsers: totals.totalUsers || 0,
+      totalAnalyses: totalAnalyses || 0,
+      totalUsers: totalUsers || 0,
       todayAnalyses: todayStats.totalAnalyses || 0
     };
   } catch (error) {
     console.error('Error getting cached stats:', error);
-    return {
-      totalAnalyses: 0,
-      totalUsers: 0,
-      todayAnalyses: 0
-    };
+    
+    // Even on error, try to return User count
+    try {
+      const User = require('./User');
+      const userCount = await User.countDocuments({ isVerified: true });
+      return {
+        totalAnalyses: 0,
+        totalUsers: userCount,
+        todayAnalyses: 0
+      };
+    } catch (fallbackError) {
+      return {
+        totalAnalyses: 0,
+        totalUsers: 0,
+        todayAnalyses: 0
+      };
+    }
   }
 };
 
