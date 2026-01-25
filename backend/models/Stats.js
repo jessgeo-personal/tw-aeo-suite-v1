@@ -104,13 +104,32 @@ statsSchema.statics.getTodayStats = async function() {
   return stats;
 };
 
-// Static method to increment analysis count
-statsSchema.statics.incrementAnalysis = async function(analyzerType = null) {
+// Static method to increment analysis count and track users
+statsSchema.statics.incrementAnalysis = async function(email = null, isVerified = false) {
   const stats = await this.getTodayStats();
   stats.totalAnalyses += 1;
   
-  if (analyzerType && stats.analysisByType[analyzerType] !== undefined) {
-    stats.analysisByType[analyzerType] += 1;
+  // Track unique emails
+  if (email) {
+    const emailLower = email.toLowerCase().trim();
+    
+    // Check if we've seen this email today by looking at the Usage collection
+    const Usage = require('./Usage');
+    const todayUsage = await Usage.findOne({ 
+      email: emailLower,
+      date: stats.date 
+    });
+    
+    // If this is the first analysis by this email today, count as unique
+    if (todayUsage && todayUsage.count === 1) {
+      stats.uniqueEmails += 1;
+      
+      if (isVerified) {
+        stats.registeredUsers += 1;
+      } else {
+        stats.anonymousUsers += 1;
+      }
+    }
   }
   
   return await stats.save();

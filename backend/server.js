@@ -139,7 +139,8 @@ app.post('/analyze',
       }
       
       // Update stats
-      await Stats.incrementAnalysis();
+      // Update stats
+      await Stats.incrementAnalysis(userEmail, req.user?.isVerified || false);
       await Stats.trackUrl(url);
       await Stats.updateAverageScore({
         overall: result.overallScore,
