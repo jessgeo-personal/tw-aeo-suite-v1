@@ -19,6 +19,21 @@ const statsRouter = require('./routes/stats');
 // Initialize Express app
 const app = express();
 
+// ============================================================================
+// ENVIRONMENT-BASED ROUTING CONFIGURATION
+// ============================================================================
+// DigitalOcean App Platform strips /api prefix via ingress routing
+// Local development needs /api prefix for frontend API calls
+// Production: Routes defined WITHOUT /api (ingress adds it)
+// Development: Routes defined WITH /api (direct calls)
+// ============================================================================
+
+const isProduction = process.env.NODE_ENV === 'production';
+const API_PREFIX = isProduction ? '' : '/api';
+
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔀 API Route Prefix: "${API_PREFIX}" ${isProduction ? '(DigitalOcean strips /api via ingress)' : '(Local development)'}`);
+
 // Trust proxy - required for DigitalOcean load balancer
 app.set('trust proxy', true);
 
@@ -60,20 +75,33 @@ mongoose.connect(process.env.MONGODB_URI)
   process.exit(1);
 });
 
-app.use('/stats', statsRouter);
+// Request logging middleware (for debugging)
+app.use((req, res, next) => {
+  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// ============================================================================
+// ROUTES - Environment-based prefix applied
+// ============================================================================
+
+// Stats route (using router)
+app.use(`${API_PREFIX}/stats`, statsRouter);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get(`${API_PREFIX}/health`, (req, res) => {
   res.json({
     success: true,
     message: 'AEO Suite API is running',
     version: '2.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    apiPrefix: API_PREFIX,
     timestamp: new Date().toISOString()
   });
 });
 
 // Main analysis endpoint - unified for all 5 analyzers
-app.post('/analyze', 
+app.post(`${API_PREFIX}/analyze`, 
   apiLimiter, 
   extractUser, 
   checkUsageLimit, 
@@ -139,7 +167,6 @@ app.post('/analyze',
       }
       
       // Update stats
-      // Update stats
       await Stats.incrementAnalysis(userEmail, req.user?.isVerified || false);
       await Stats.trackUrl(url);
       await Stats.updateAverageScore({
@@ -187,7 +214,7 @@ app.post('/analyze',
 );
 
 // Request OTP endpoint
-app.post('/auth/request-otp', apiLimiter, async (req, res) => {
+app.post(`${API_PREFIX}/auth/request-otp`, apiLimiter, async (req, res) => {
   try {
     const { email, firstName, lastName, country, phone } = req.body;
     
@@ -223,11 +250,9 @@ app.post('/auth/request-otp', apiLimiter, async (req, res) => {
     
     if (!emailResult.success) {
       console.error('Failed to send OTP email:', emailResult.error);
-      // Still return success to user, but log the error
-      // In production, you might want to handle this differently
     }
     
-    // Also log to console for development/debugging
+    // Log OTP for development
     if (process.env.NODE_ENV === 'development') {
       console.log(`📧 OTP for ${email}: ${otpDoc.otp}`);
     }
@@ -242,13 +267,13 @@ app.post('/auth/request-otp', apiLimiter, async (req, res) => {
     console.error('Request OTP error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send OTP'
+      message: 'Failed to send OTP. Please try again.'
     });
   }
 });
 
 // Verify OTP endpoint
-app.post('/auth/verify-otp', apiLimiter, async (req, res) => {
+app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
     
@@ -266,11 +291,11 @@ app.post('/auth/verify-otp', apiLimiter, async (req, res) => {
       return res.status(400).json(result);
     }
     
-    // Update user as verified
+    // Update user verification status
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (user && !user.isVerified) {
       user.isVerified = true;
-      user.lastLogin = new Date();
+      user.dailyLimit = 10; // Registered users get 10 analyses/day
       await user.save();
     }
     
@@ -280,7 +305,7 @@ app.post('/auth/verify-otp', apiLimiter, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Email verified successfully',
+      message: 'OTP verified successfully',
       user: {
         email: user.email,
         firstName: user.firstName,
@@ -294,18 +319,18 @@ app.post('/auth/verify-otp', apiLimiter, async (req, res) => {
     console.error('Verify OTP error:', error);
     res.status(500).json({
       success: false,
-      message: 'OTP verification failed'
+      message: 'Failed to verify OTP. Please try again.'
     });
   }
 });
 
-// Get session info
-app.get('/auth/session', extractUser, async (req, res) => {
+// Get session endpoint
+app.get(`${API_PREFIX}/auth/session`, extractUser, async (req, res) => {
   try {
     if (!req.session || !req.session.email) {
       return res.json({
-        success: true,
-        authenticated: false
+        authenticated: false,
+        user: null
       });
     }
     
@@ -313,48 +338,50 @@ app.get('/auth/session', extractUser, async (req, res) => {
     
     if (!user) {
       return res.json({
-        success: true,
-        authenticated: false
+        authenticated: false,
+        user: null
       });
     }
     
-    // Get today's usage
+    // Get usage for today
+    const Usage = require('./models/Usage');
     const usage = await Usage.getTodayUsage(user.email);
     
     res.json({
-      success: true,
       authenticated: true,
       user: {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         isVerified: user.isVerified,
-        hasSubscription: user.hasActiveSubscription(),
-        dailyLimit: user.getDailyLimit()
+        dailyLimit: user.getDailyLimit(),
+        hasActiveSubscription: user.hasActiveSubscription()
       },
       usage: {
         current: usage.count,
         limit: user.getDailyLimit(),
-        remaining: Math.max(0, user.getDailyLimit() - usage.count)
+        remaining: user.getDailyLimit() - usage.count
       }
     });
     
   } catch (error) {
-    console.error('Session check error:', error);
+    console.error('Get session error:', error);
     res.status(500).json({
-      success: false,
-      message: 'Session check failed'
+      authenticated: false,
+      user: null,
+      error: 'Failed to get session'
     });
   }
 });
 
 // Logout endpoint
-app.post('/auth/logout', (req, res) => {
-  req.session.destroy(err => {
+app.post(`${API_PREFIX}/auth/logout`, (req, res) => {
+  req.session.destroy((err) => {
     if (err) {
+      console.error('Logout error:', err);
       return res.status(500).json({
         success: false,
-        message: 'Logout failed'
+        message: 'Failed to logout'
       });
     }
     
@@ -365,85 +392,41 @@ app.post('/auth/logout', (req, res) => {
   });
 });
 
-// Lead form submission endpoint
-const { createOrUpdateContact } = require('./utils/hubspot');
-
-app.post('/leads/submit', apiLimiter, async (req, res) => {
+// Lead submission endpoint (HubSpot integration)
+app.post(`${API_PREFIX}/leads/submit`, apiLimiter, async (req, res) => {
   try {
-    const { email, firstName, lastName, company, phone, country, leadInterest } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      company, 
+      message,
+      service 
+    } = req.body;
     
-    // Validate required fields
-    if (!email || !firstName || !lastName || !company || !country) {
+    if (!email || !firstName) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: 'Name and email are required'
       });
     }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format'
-      });
-    }
-
-    console.log(`📝 Lead form submitted: ${email} - ${leadInterest}`);
-
-    // Create or update user in database
-    let user = await User.findOne({ email: email.toLowerCase().trim() });
     
-    if (!user) {
-      user = new User({
-        email: email.toLowerCase().trim(),
-        firstName,
-        lastName,
-        company,
-        phone: phone || '',
-        country,
-        isVerified: false
-      });
-      await user.save();
-      console.log(`✅ New user created from lead form: ${email}`);
-    } else {
-      // Update existing user with new information
-      user.firstName = firstName || user.firstName;
-      user.lastName = lastName || user.lastName;
-      user.company = company || user.company;
-      user.phone = phone || user.phone;
-      user.country = country || user.country;
-      await user.save();
-      console.log(`✅ Existing user updated from lead form: ${email}`);
-    }
-
-    // Sync with HubSpot
-    const hubspotResult = await createOrUpdateContact({
-      email: email.toLowerCase().trim(),
+    // Create or update HubSpot contact
+    const hubspot = require('./utils/hubspot');
+    const hubspotResult = await hubspot.createOrUpdateContact({
+      email,
       firstName,
       lastName,
+      phone,
       company,
-      phone: phone || '',
-      country,
-      leadInterest
+      message,
+      service
     });
-
-    if (hubspotResult.success) {
-      // Update user with HubSpot contact ID
-      if (hubspotResult.contactId) {
-        user.hubspotContactId = hubspotResult.contactId;
-        await user.save();
-      }
-      
-      console.log(`✅ Lead synced with HubSpot: ${email}`);
-    } else {
-      console.error(`⚠️ HubSpot sync failed for ${email}:`, hubspotResult.message);
-      // Continue anyway - lead is saved in our database
-    }
-
+    
     res.json({
       success: true,
-      message: 'Thank you! We will be in touch at the earliest.',
+      message: 'Thank you for your interest! We will be in touch at the earliest.',
       hubspotSynced: hubspotResult.success
     });
 
@@ -457,7 +440,7 @@ app.post('/leads/submit', apiLimiter, async (req, res) => {
 });
 
 // Get user's analysis history
-app.get('/analyses', extractUser, async (req, res) => {
+app.get(`${API_PREFIX}/analyses`, extractUser, async (req, res) => {
   try {
     if (!req.session || !req.session.email) {
       return res.status(401).json({
@@ -504,6 +487,7 @@ app.listen(PORT, () => {
   console.log(`🚀 AEO Suite API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`API Routes use prefix: "${API_PREFIX}"`);
 });
 
 module.exports = app;

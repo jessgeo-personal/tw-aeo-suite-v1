@@ -18,12 +18,13 @@ router.get('/', async (req, res) => {
     
     res.json(stats);
   } catch (error) {
-    console.error('[Stats API] Error fetching stats:', error);
+    console.error('❌ [Stats API Route] Error fetching stats:', error.message);
+    console.error('Stack trace:', error.stack);
     
-    // Return default values on error
+    // Return default values on error (baseline only)
     res.json({
       totalAnalyses: 1025,
-      totalUsers: 78
+      totalUsers: 78 // Baseline user count
     });
   }
 });

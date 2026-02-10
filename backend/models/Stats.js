@@ -171,6 +171,9 @@ statsSchema.statics.trackUrl = async function(url) {
 
 // Static method to get cached aggregated stats
 statsSchema.statics.getCached = async function() {
+  const BASE_ANALYSES_COUNT = 1025; // Baseline analysis count
+  const BASE_USER_COUNT = 78; // Baseline user count
+  
   try {
     // Get total analyses from stats collection (aggregate all days)
     const allTimeStats = await this.aggregate([
@@ -182,37 +185,45 @@ statsSchema.statics.getCached = async function() {
       }
     ]);
     
-    const totalAnalyses = allTimeStats.length > 0 ? allTimeStats[0].totalAnalyses : 0;
+    const dbAnalysesCount = allTimeStats.length > 0 ? allTimeStats[0].totalAnalyses : 0;
     
-    // Get total VERIFIED users directly from User collection
-    // This is the accurate count, not from stats
+    // Get total ALL users directly from User collection (removed isVerified filter)
     const User = require('./User');
-    const totalUsers = await User.countDocuments({ isVerified: true });
+    const dbUserCount = await User.countDocuments(); // Count ALL users
+    
+    // Add baseline to actual counts
+    const totalAnalyses = BASE_ANALYSES_COUNT + dbAnalysesCount;
+    const totalUsers = BASE_USER_COUNT + dbUserCount;
     
     // Get today's stats
     const todayStats = await this.getTodayStats();
     
+    console.log(`✅ [Stats] Successfully retrieved: ${totalAnalyses} analyses (${dbAnalysesCount} in DB + ${BASE_ANALYSES_COUNT} baseline), ${totalUsers} users (${dbUserCount} in DB + ${BASE_USER_COUNT} baseline)`);
+    
     return {
-      totalAnalyses: totalAnalyses || 0,
-      totalUsers: totalUsers || 0,
+      totalAnalyses: totalAnalyses || BASE_ANALYSES_COUNT,
+      totalUsers: totalUsers || BASE_USER_COUNT,
       todayAnalyses: todayStats.totalAnalyses || 0
     };
   } catch (error) {
-    console.error('Error getting cached stats:', error);
+    console.error('❌ [Stats API] CRITICAL ERROR - Failed to retrieve stats from database:', error.message);
+    console.error('Stack trace:', error.stack);
     
     // Even on error, try to return User count
     try {
       const User = require('./User');
-      const userCount = await User.countDocuments({ isVerified: true });
+      const userCount = await User.countDocuments(); // Count ALL users
+      console.log(`⚠️ [Stats API] Partial recovery - User count retrieved: ${userCount}, using baseline analyses`);
       return {
-        totalAnalyses: 0,
-        totalUsers: userCount,
+        totalAnalyses: BASE_ANALYSES_COUNT,
+        totalUsers: BASE_USER_COUNT + userCount,
         todayAnalyses: 0
       };
     } catch (fallbackError) {
+      console.error('❌ [Stats API] COMPLETE FAILURE - Cannot access database at all:', fallbackError.message);
       return {
-        totalAnalyses: 0,
-        totalUsers: 0,
+        totalAnalyses: BASE_ANALYSES_COUNT,
+        totalUsers: BASE_USER_COUNT,
         todayAnalyses: 0
       };
     }
