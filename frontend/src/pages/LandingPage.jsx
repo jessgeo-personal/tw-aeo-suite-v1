@@ -16,7 +16,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
   const [keywords, setKeywords] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null); // Changed from '' to null to store object
   const [usage, setUsage] = useState(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,7 +48,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
 
     // Validate URL
     if (!isValidUrl(url)) {
-      setError('Please enter a valid URL');
+      setError({ message: 'Please enter a valid URL' });
       return;
     }
 
@@ -74,12 +74,18 @@ const LandingPage = ({ user, onUserUpdate }) => {
 
       // Navigate to dashboard with results
       navigate('/dashboard', { state: { result } });
-    } catch (err) {
-      setError(err.message || 'Analysis failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        // Store full error object to access blocking details
+        setError({
+          message: err.message || 'Analysis failed',
+          blockDetection: err.blockDetection || null,
+          aeoImpact: err.aeoImpact || null,
+          recommendation: err.recommendation || null
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <>
@@ -263,8 +269,64 @@ const LandingPage = ({ user, onUserUpdate }) => {
             </div>
 
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
-                {error}
+              <div className="space-y-3">
+                {/* Main error message */}
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
+                  {typeof error === 'string' ? error : error.message}
+                </div>
+
+                {/* Bot blocking details (if available) */}
+                {error.blockDetection && error.blockDetection.isBlocked && (
+                  <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg space-y-3">
+                    {/* Block Type */}
+                    <div className="flex items-start gap-2">
+                      <div className="text-orange-500 font-semibold text-sm">
+                        🤖 Blocking Type:
+                      </div>
+                      <div className="text-orange-300 text-sm">
+                        {error.blockDetection.blockType}
+                      </div>
+                    </div>
+
+                    {/* AEO Impact */}
+                    {error.aeoImpact && (
+                      <div className="flex items-start gap-2">
+                        <div className="text-orange-500 font-semibold text-sm">
+                          ⚠️ AEO Impact:
+                        </div>
+                        <div className="text-orange-300 text-sm">
+                          {error.aeoImpact}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommendation */}
+                    {error.recommendation && (
+                      <div className="flex items-start gap-2">
+                        <div className="text-orange-500 font-semibold text-sm">
+                          💡 Recommendation:
+                        </div>
+                        <div className="text-orange-300 text-sm">
+                          {error.recommendation}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Evidence */}
+                    {error.blockDetection.evidence && error.blockDetection.evidence.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-orange-500/20">
+                        <div className="text-orange-500 font-semibold text-xs mb-1">
+                          Evidence:
+                        </div>
+                        <ul className="list-disc list-inside text-orange-300/80 text-xs space-y-1">
+                          {error.blockDetection.evidence.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

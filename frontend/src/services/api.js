@@ -66,7 +66,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       // Server responded with error
-      const errorMessage = error.response.data?.message || 'An error occurred';
+      const errorData = error.response.data || {};
+      const errorMessage = errorData.message || 'An error occurred';
       
       // Handle specific error cases
       if (error.response.status === 401) {
@@ -77,7 +78,13 @@ api.interceptors.response.use(
         console.error('Rate limit exceeded. Please try again later.');
       }
       
-      throw new Error(errorMessage);
+      // Preserve all error data from server response
+      const customError = new Error(errorMessage);
+      customError.blockDetection = errorData.blockDetection;
+      customError.aeoImpact = errorData.aeoImpact;
+      customError.recommendation = errorData.recommendation;
+      
+      throw customError;
     } else if (error.request) {
       // Request made but no response
       throw new Error('No response from server. Please check your connection.');

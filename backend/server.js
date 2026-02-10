@@ -133,11 +133,21 @@ app.post(`${API_PREFIX}/analyze`,
       const result = await runCompleteAnalysis(url, targetKeywords);
       
       if (!result.success) {
-        return res.status(500).json({
+        // Analysis failed - pass through detailed error info including blocking detection
+        const errorResponse = {
           success: false,
-          message: result.error || 'Analysis failed',
+          message: result.userMessage || result.error || 'Analysis failed',
           error: result.error
-        });
+        };
+        
+        // Include blocking detection details if available
+        if (result.blockDetection) {
+          errorResponse.blockDetection = result.blockDetection;
+          errorResponse.aeoImpact = result.aeoImpact;
+          errorResponse.recommendation = result.recommendation;
+        }
+        
+        return res.status(500).json(errorResponse);
       }
       
       // Get or create user
@@ -204,11 +214,22 @@ app.post(`${API_PREFIX}/analyze`,
       
     } catch (error) {
       console.error('Analysis endpoint error:', error);
-      res.status(500).json({
+      
+      // Pass through blocking detection if available
+      const errorResponse = {
         success: false,
-        message: 'An error occurred during analysis',
+        message: error.message || 'An error occurred during analysis',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      };
+      
+      // Include blocking detection from error object
+      if (error.blockDetection) {
+        errorResponse.blockDetection = error.blockDetection;
+        errorResponse.aeoImpact = error.blockDetection.aeoImpact;
+        errorResponse.recommendation = error.blockDetection.recommendation;
+      }
+      
+      res.status(500).json(errorResponse);
     }
   }
 );

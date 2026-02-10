@@ -9,6 +9,7 @@ const { getGrade } = require('../utils/shared');
 /**
  * Main analyzer orchestrator
  * Runs all 5 analyzers and calculates weighted overall score
+ * Enhanced with bot/crawler blocking detection
  */
 async function runCompleteAnalysis(url, targetKeywords = []) {
   try {
@@ -24,9 +25,27 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
     
     const startTime = Date.now();
     
-    // Fetch the page
+    // Fetch the page (with enhanced bot blocking detection)
     console.log(`Fetching page: ${url}`);
-    const { $, html } = await fetchPage(url);
+    const fetchResult = await fetchPage(url);
+    const { $, html, blockDetection } = fetchResult;
+    
+    // If bot blocking was detected, add critical warning to recommendations
+    let blockingWarning = null;
+    if (blockDetection && blockDetection.isBlocked) {
+      blockingWarning = {
+        text: `⚠️ CRITICAL AEO ISSUE: Bot/Crawler Blocking Detected - ${blockDetection.blockType}`,
+        why: blockDetection.aeoImpact,
+        howToFix: blockDetection.recommendation,
+        priority: 'critical',
+        analyzer: 'Site Accessibility',
+        evidence: blockDetection.evidence,
+        blockType: blockDetection.blockType
+      };
+      
+      console.log(`🚨 Bot blocking detected: ${blockDetection.blockType}`);
+      console.log(`   Evidence: ${blockDetection.evidence.join(', ')}`);
+    }
     
     // Run all 5 analyzers in parallel
     console.log('Running analyzers...');
@@ -82,6 +101,8 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
     };
     
     const allRecommendations = [
+      // Add blocking warning FIRST if detected
+      ...(blockingWarning ? [blockingWarning] : []),
       ...technicalFoundation.recommendations.map(r => normalizeRecommendation(r, 'Technical Foundation')),
       ...contentStructure.recommendations.map(r => normalizeRecommendation(r, 'Content Structure')),
       ...pageLevelEEAT.recommendations.map(r => normalizeRecommendation(r, 'E-E-A-T')),
@@ -113,18 +134,37 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
       },
       recommendations: topRecommendations,
       weights,
+      blockDetection: blockDetection || null, // Include block detection results
       timestamp: new Date().toISOString()
     };
     
   } catch (error) {
     console.error('Analysis error:', error);
     
-    return {
+    // Check if error includes bot blocking detection
+    const blockDetection = error.blockDetection || null;
+    
+    // Create enhanced error response
+    const errorResponse = {
       success: false,
       error: error.message || 'Analysis failed',
       url,
       timestamp: new Date().toISOString()
     };
+    
+    // If blocking was detected, include detailed information
+    if (blockDetection && blockDetection.isBlocked) {
+      errorResponse.blockDetection = blockDetection;
+      errorResponse.userMessage = `Unable to analyze this website: ${blockDetection.blockType}`;
+      errorResponse.aeoImpact = blockDetection.aeoImpact;
+      errorResponse.recommendation = blockDetection.recommendation;
+      
+      console.log(`🚨 Analysis failed due to blocking: ${blockDetection.blockType}`);
+      console.log(`   AEO Impact: ${blockDetection.aeoImpact}`);
+      console.log(`   Recommendation: ${blockDetection.recommendation}`);
+    }
+    
+    return errorResponse;
   }
 }
 
