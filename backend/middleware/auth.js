@@ -11,6 +11,10 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Trust DigitalOcean's proxy headers for accurate IP tracking
+  trustProxy: true,
+  // Use X-Forwarded-For header (DigitalOcean provides this)
+  validate: { trustProxy: false } // Disable validation that was causing the error
 });
 
 // Strict rate limiter for auth endpoints
@@ -23,6 +27,9 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Trust DigitalOcean's proxy headers for accurate IP tracking
+  trustProxy: true,
+  validate: { trustProxy: false } // Disable validation that was causing the error
 });
 
 // Middleware to extract user from session
