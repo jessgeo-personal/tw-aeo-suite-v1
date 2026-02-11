@@ -198,6 +198,14 @@ app.post(`${API_PREFIX}/analyze`,
 
       console.log(`✅ Analysis completed: ${analysis._id}`);
       
+      // Filter analyzers based on subscription tier
+      const filteredAnalyzers = { ...result.analyzers };
+      
+      // Hide Site-Level EEAT for free users
+      if (!user || (user.subscription.type !== 'pro' && user.subscription.type !== 'enterprise')) {
+        filteredAnalyzers.siteLevelEEAT = null;
+      }
+      
       // Return results
       res.json({
         success: true,
@@ -208,7 +216,7 @@ app.post(`${API_PREFIX}/analyze`,
           targetKeywords,
           overallScore: result.overallScore,
           overallGrade: result.overallGrade,
-          analyzers: result.analyzers,
+          analyzers: filteredAnalyzers, // Use filtered analyzers
           recommendations: result.recommendations,
           weights: result.weights,
           processingTime: result.processingTime
@@ -341,7 +349,13 @@ app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         isVerified: user.isVerified,
-        dailyLimit: user.getDailyLimit()
+        dailyLimit: user.getDailyLimit(),
+        hasActiveSubscription: user.hasActiveSubscription(),
+        subscription: {
+          type: user.subscription.type || 'free',
+          status: user.subscription.status || 'inactive',
+          endDate: user.subscription.endDate || null
+        }
       }
     });
     
@@ -385,7 +399,12 @@ app.get(`${API_PREFIX}/auth/session`, extractUser, async (req, res) => {
         lastName: user.lastName,
         isVerified: user.isVerified,
         dailyLimit: user.getDailyLimit(),
-        hasActiveSubscription: user.hasActiveSubscription()
+        hasActiveSubscription: user.hasActiveSubscription(),
+        subscription: {
+          type: user.subscription.type || 'free',
+          status: user.subscription.status || 'inactive',
+          endDate: user.subscription.endDate || null
+        }
       },
       usage: {
         current: usage.count,
