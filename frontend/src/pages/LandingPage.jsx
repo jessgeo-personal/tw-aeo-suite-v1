@@ -5,12 +5,13 @@ import PricingModal from '../components/PricingModal';
 import FairUsePolicyModal from '../components/FairUsePolicyModal';
 import AuthModal from '../components/AuthModal';
 import UsageBadge from '../components/UsageBadge';
+import UserMenu from '../components/UserMenu';
 import GuideModal from '../components/GuideModal';
 import StatsBar from '../components/StatsBar';
 import apiService from '../services/api';
 import { isValidUrl } from '../utils/helpers';
 
-const LandingPage = ({ user, onUserUpdate }) => {
+const LandingPage = ({ user, onUserUpdate, onLogout }) => {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [keywords, setKeywords] = useState('');
@@ -24,6 +25,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [guideModalTab, setGuideModalTab] = useState('business');
   const [showFairUseModal, setShowFairUseModal] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState(null); // Store URL/keywords for post-OTP analysis
 
   useEffect(() => {
     if (user) {
@@ -42,6 +44,70 @@ const LandingPage = ({ user, onUserUpdate }) => {
     }
   };
 
+  // Handle successful OTP - run pending analysis if exists
+  const handleAuthSuccess = async (userData) => {
+    // CRITICAL FIX: Fetch fresh session data to get subscription details
+    // OTP response may have minimal data, session endpoint has complete data
+    try {
+      const sessionData = await apiService.auth.getSession();
+      if (sessionData.authenticated && sessionData.user) {
+        // Use session user data (has subscription) instead of OTP user data
+        onUserUpdate(sessionData.user);
+        userData = sessionData.user; // Use for analysis if needed
+      } else {
+        // Fallback to OTP user data if session fetch fails
+        onUserUpdate(userData);
+      }
+    } catch (error) {
+      console.error('Session fetch after OTP failed:', error);
+      // Still use OTP user data as fallback
+      onUserUpdate(userData);
+    }
+    
+    // If there's a pending analysis, run it immediately
+    if (pendingAnalysis) {
+      setLoading(true);
+      try {
+        const keywordsArray = pendingAnalysis.keywords
+          .split(',')
+          .map(k => k.trim())
+          .filter(k => k.length > 0);
+
+        const result = await apiService.analysis.runAnalysis(
+          pendingAnalysis.url,
+          keywordsArray,
+          userData.email
+        );
+
+        // Clear pending analysis
+        setPendingAnalysis(null);
+        
+        // Navigate to dashboard with results
+        navigate('/dashboard', { state: { result } });
+      } catch (err) {
+        setError({
+          message: err.message || 'Analysis failed',
+          blockDetection: err.blockDetection || null,
+          aeoImpact: err.aeoImpact || null,
+          recommendation: err.recommendation || null
+        });
+        setPendingAnalysis(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiService.auth.logout();
+      onLogout(); // Clear user in App.js
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const handleAnalyze = async (e) => {
     e.preventDefault();
     setError('');
@@ -54,6 +120,8 @@ const LandingPage = ({ user, onUserUpdate }) => {
 
     // Check if user is authenticated
     if (!user) {
+      // Store the analysis details to run after OTP
+      setPendingAnalysis({ url, keywords });
       setShowAuthModal(true);
       return;
     }
@@ -146,7 +214,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
                   {/*{usage && (
                     <UsageBadge current={usage.current} limit={usage.limit} className="hidden sm:flex" />
                   )} */}
-                  <div className="hidden md:block text-sm text-dark-400">{user.email}</div>
+                  <UserMenu user={user} onLogout={handleLogout} />
                   <button
                     onClick={() => {
                       setPricingModalTab('subscription');
@@ -276,22 +344,22 @@ const LandingPage = ({ user, onUserUpdate }) => {
                 </div>
 
                 {/* Bot blocking details (if available) */}
-                {error.blockDetection && error.blockDetection.isBlocked && (
-                  <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg space-y-3">
+                {typeof error === 'object' && error.blockDetection && error.blockDetection.isBlocked && (
+                  <div className="p-6 bg-orange-500/10 border border-orange-500/30 rounded-lg space-y-4">
                     {/* Block Type */}
-                    <div className="flex items-start gap-2">
-                      <div className="text-orange-500 font-semibold text-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="text-orange-500 font-semibold text-sm min-w-[120px]">
                         🤖 Blocking Type:
                       </div>
-                      <div className="text-orange-300 text-sm">
+                      <div className="text-orange-300 text-sm font-semibold">
                         {error.blockDetection.blockType}
                       </div>
                     </div>
 
                     {/* AEO Impact */}
                     {error.aeoImpact && (
-                      <div className="flex items-start gap-2">
-                        <div className="text-orange-500 font-semibold text-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="text-orange-500 font-semibold text-sm min-w-[120px]">
                           ⚠️ AEO Impact:
                         </div>
                         <div className="text-orange-300 text-sm">
@@ -300,13 +368,34 @@ const LandingPage = ({ user, onUserUpdate }) => {
                       </div>
                     )}
 
-                    {/* Recommendation */}
-                    {error.recommendation && (
-                      <div className="flex items-start gap-2">
-                        <div className="text-orange-500 font-semibold text-sm">
-                          💡 Recommendation:
+                    {/* Blocked Bots List (if Cloudflare) */}
+                    {error.blockDetection.blockedBots && error.blockDetection.blockedBots.length > 0 && (
+                      <div className="bg-orange-900/20 rounded-lg p-4 space-y-2">
+                        <div className="text-orange-400 font-semibold text-sm mb-3">
+                          🚫 AI Bots Being Blocked:
                         </div>
-                        <div className="text-orange-300 text-sm">
+                        <div className="space-y-2">
+                          {error.blockDetection.blockedBots.map((bot, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs">
+                              <span className="text-orange-500 font-mono bg-orange-900/30 px-2 py-1 rounded">
+                                {bot.userAgent}
+                              </span>
+                              <span className="text-orange-300/80">
+                                → {bot.impact}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommendation - Expandable for long instructions */}
+                    {error.recommendation && (
+                      <div className="border-t border-orange-500/20 pt-4">
+                        <div className="text-orange-500 font-semibold text-sm mb-2">
+                          💡 How to Fix:
+                        </div>
+                        <div className="bg-dark-900 rounded p-4 text-orange-200/90 text-xs font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
                           {error.recommendation}
                         </div>
                       </div>
@@ -314,9 +403,9 @@ const LandingPage = ({ user, onUserUpdate }) => {
 
                     {/* Evidence */}
                     {error.blockDetection.evidence && error.blockDetection.evidence.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-orange-500/20">
-                        <div className="text-orange-500 font-semibold text-xs mb-1">
-                          Evidence:
+                      <div className="border-t border-orange-500/20 pt-3">
+                        <div className="text-orange-500 font-semibold text-xs mb-2">
+                          🔍 Evidence:
                         </div>
                         <ul className="list-disc list-inside text-orange-300/80 text-xs space-y-1">
                           {error.blockDetection.evidence.map((item, idx) => (
@@ -325,11 +414,23 @@ const LandingPage = ({ user, onUserUpdate }) => {
                         </ul>
                       </div>
                     )}
+
+                    {/* Quick Action Button */}
+                    <div className="border-t border-orange-500/20 pt-4">
+                      
+                      <a href="https://dash.cloudflare.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        Open Cloudflare Dashboard →
+                      </a>
+                    </div>
+                    </div>
+                  )}
                   </div>
                 )}
-              </div>
-            )}
-
+            
             <button
               type="submit"
               disabled={loading || !url}
@@ -348,7 +449,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
               )}
             </button>
           </form>
-
+            
           {!user && (
             <p className="mt-6 text-sm text-dark-500">
               Free analysis • No credit card required • Results in ~5 seconds
@@ -694,7 +795,7 @@ const LandingPage = ({ user, onUserUpdate }) => {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onSuccess={onUserUpdate}
+        onSuccess={handleAuthSuccess}
         prefilledEmail=""
       />
 

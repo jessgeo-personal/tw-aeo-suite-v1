@@ -70,6 +70,14 @@ const analysisSchema = new mongoose.Schema({
     details: mongoose.Schema.Types.Mixed
   },
   
+  siteLevelEEAT: {
+    score: Number,
+    grade: String,
+    findings: mongoose.Schema.Types.Mixed,
+    recommendations: [mongoose.Schema.Types.Mixed],
+    details: mongoose.Schema.Types.Mixed
+  },
+
   // Metadata
   status: {
     type: String,
@@ -106,6 +114,7 @@ analysisSchema.index({ userId: 1, createdAt: -1 });
 analysisSchema.index({ email: 1, createdAt: -1 });
 analysisSchema.index({ url: 1 });
 analysisSchema.index({ createdAt: -1 });
+analysisSchema.index({ url: 1, email: 1, createdAt: -1 }); // For trend tracking
 
 // Method to calculate overall score with weights
 analysisSchema.methods.calculateOverallScore = function() {

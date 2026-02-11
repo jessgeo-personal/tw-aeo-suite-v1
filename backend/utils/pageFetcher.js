@@ -50,8 +50,55 @@ function detectBotBlocking(error, response = null) {
       detection.isBlocked = true;
       detection.blockType = 'Cloudflare Bot Challenge';
       detection.evidence.push('Cloudflare bot challenge page detected');
-      detection.recommendation = 'Configure Cloudflare to allow verified AI crawlers (ChatGPT, Perplexity, etc.)';
-      detection.aeoImpact = 'CRITICAL: Cloudflare is blocking AI search engines with JavaScript challenges';
+      
+      // Detailed step-by-step instructions
+      detection.recommendation = `CLOUDFLARE FIX: Allow AI Crawlers & AEO Bot
+
+      METHOD 1: Enable Verified Bots (Recommended - Allows ALL legitimate AI bots)
+      1. Log into Cloudflare Dashboard → Select your domain
+      2. Go to Security → Bots
+      3. Under "Bot Fight Mode" section:
+        - Enable "Allow verified bots" toggle
+        - This automatically allows: GPTBot, ClaudeBot, Google-Extended, Perplexity, Bingbot, and other verified crawlers
+
+      METHOD 2: Custom WAF Rule for Specific Bots (More Control)
+      1. Go to Security → WAF → Custom rules
+      2. Click "Create rule"
+      3. Rule name: "Allow AI Crawlers and AEO Bot"
+      4. Expression:
+        (http.user_agent contains "GPTBot") or
+        (http.user_agent contains "ClaudeBot") or
+        (http.user_agent contains "Google-Extended") or
+        (http.user_agent contains "PerplexityBot") or
+        (http.user_agent contains "Bingbot") or
+        (http.user_agent contains "AIOptimizeBot")
+      5. Action: Skip → Select "All remaining custom rules"
+      6. Click "Deploy"
+
+      METHOD 3: IP Allowlist for AEO Analyzer (For our bot only)
+      1. Go to Security → WAF → Tools
+      2. Under "IP Access Rules"
+      3. Add IP: [Contact support@thatworkx.com for our bot's IP]
+      4. Action: Allow
+      5. Zone: This website
+
+      VERIFY IT WORKS:
+      After configuration, test at: https://aeo.thatworkx.com
+      Run a new analysis - you should see full results instead of blocking errors.
+
+      IMPORTANT: These changes typically take effect within 2-3 minutes.`;
+      
+      detection.aeoImpact = 'CRITICAL: Cloudflare is blocking AI search engines (ChatGPT, Claude, Perplexity, Google AI) AND the AEO analyzer. This means AI-powered search tools CANNOT access your content to include it in their answers. You are invisible to 60% of searches that now use AI.';
+      
+      // Add specific bot list
+      detection.blockedBots = [
+        { name: 'ChatGPT (GPTBot)', userAgent: 'GPTBot', impact: 'Cannot answer questions about your content' },
+        { name: 'Claude (ClaudeBot)', userAgent: 'ClaudeBot', impact: 'Cannot cite your content in responses' },
+        { name: 'Perplexity (PerplexityBot)', userAgent: 'PerplexityBot', impact: 'Cannot include you in AI-powered search results' },
+        { name: 'Google AI (Google-Extended)', userAgent: 'Google-Extended', impact: 'Cannot show your content in AI Overviews' },
+        { name: 'Microsoft Copilot (Bingbot)', userAgent: 'Bingbot', impact: 'Cannot reference your content in Copilot answers' },
+        { name: 'AEO Analyzer (AIOptimizeBot)', userAgent: 'AIOptimizeBot', impact: 'Cannot analyze your AEO readiness' }
+      ];
     }
     
     // Imperva/Incapsula detection
@@ -113,6 +160,64 @@ function detectBotBlocking(error, response = null) {
 }
 
 /**
+ * Check robots.txt and respect disallow rules
+ * @param {string} url - URL to check
+ * @param {string} userAgent - Bot user agent
+ * @returns {boolean} - True if allowed, false if disallowed
+ */
+async function checkRobotsTxt(url, userAgent = 'AIOptimizeBot') {
+  try {
+    const urlObj = new URL(url);
+    const robotsUrl = `${urlObj.protocol}//${urlObj.host}/robots.txt`;
+    
+    const response = await axios.get(robotsUrl, {
+      timeout: 5000,
+      validateStatus: (status) => status === 200
+    });
+    
+    const robotsTxt = response.data;
+    const lines = robotsTxt.split('\n');
+    
+    let currentUserAgent = null;
+    let isOurBot = false;
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Check for User-agent directive
+      if (trimmed.toLowerCase().startsWith('user-agent:')) {
+        const agent = trimmed.substring(11).trim();
+        currentUserAgent = agent;
+        isOurBot = agent === '*' || agent.toLowerCase().includes('aioptimizebot');
+      }
+      
+      // Check for Disallow directive
+      if (isOurBot && trimmed.toLowerCase().startsWith('disallow:')) {
+        const path = trimmed.substring(9).trim();
+        
+        // If disallow everything
+        if (path === '/') {
+          console.log(`🚫 Robots.txt blocks AIOptimizeBot from ${url}`);
+          return false;
+        }
+        
+        // If disallow specific path that matches our URL
+        if (path && urlObj.pathname.startsWith(path)) {
+          console.log(`🚫 Robots.txt blocks AIOptimizeBot from ${urlObj.pathname}`);
+          return false;
+        }
+      }
+    }
+    
+    return true; // Allowed by default
+    
+  } catch (error) {
+    // If robots.txt doesn't exist or can't be fetched, assume allowed
+    return true;
+  }
+}
+
+/**
  * Fetch and parse a web page with enhanced error detection
  * @param {string} url - URL to fetch
  * @param {object} options - Axios options
@@ -124,6 +229,20 @@ async function fetchPage(url, options = {}) {
   try {
     // Validate URL
     new URL(url);
+
+    // Check robots.txt compliance
+    const robotsAllowed = await checkRobotsTxt(url);
+    if (!robotsAllowed) {
+      const error = new Error('Access blocked by robots.txt');
+      error.blockDetection = {
+        isBlocked: true,
+        blockType: 'Robots.txt Disallow',
+        evidence: ['Site owner has blocked AIOptimizeBot in robots.txt'],
+        recommendation: 'This site has explicitly disallowed our bot. Respect their wishes.',
+        aeoImpact: 'NEUTRAL: Site owner preference to block analysis'
+      };
+      throw error;
+    }
     
     // Default axios configuration
     const config = {
@@ -131,7 +250,7 @@ async function fetchPage(url, options = {}) {
       method: 'GET',
       timeout: 30000, // 30 second timeout
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AEO-Audit-Bot/1.0; +https://thatworkx.com)',
+        'User-Agent': 'Mozilla/5.0 (compatible; AIOptimizeBot/1.0; +https://aeo.thatworkx.com/aeo-bot.html)',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate',

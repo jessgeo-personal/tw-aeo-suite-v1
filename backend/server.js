@@ -165,6 +165,7 @@ app.post(`${API_PREFIX}/analyze`,
         pageLevelEEAT: result.analyzers.pageLevelEEAT,
         queryMatch: result.analyzers.queryMatch,
         aiVisibility: result.analyzers.aiVisibility,
+        siteLevelEEAT: result.analyzers.siteLevelEEAT,
         status: 'completed',
         processingTime: result.processingTime
       });
@@ -188,6 +189,13 @@ app.post(`${API_PREFIX}/analyze`,
         visibility: result.analyzers.aiVisibility.score
       });
       
+      // Calculate trend for Pro/Enterprise users
+      const { calculateTrend } = require('./utils/trendCalculator');
+      let trendData = null;
+      if (user && (user.subscription.type === 'pro' || user.subscription.type === 'enterprise')) {
+        trendData = await calculateTrend(url, userEmail, analysis._id);
+      }
+
       console.log(`✅ Analysis completed: ${analysis._id}`);
       
       // Return results
@@ -205,6 +213,7 @@ app.post(`${API_PREFIX}/analyze`,
           weights: result.weights,
           processingTime: result.processingTime
         },
+        trend: trendData,
         usage: {
           current: req.currentUsage + 1,
           limit: req.dailyLimit,
@@ -460,6 +469,208 @@ app.post(`${API_PREFIX}/leads/submit`, apiLimiter, async (req, res) => {
   }
 });
 
+// PDF Export Endpoints (Pro feature)
+const { generateSummaryPDF, generateDetailedPDF } = require('./utils/pdfGenerator');
+const path = require('path');
+const fs = require('fs');
+
+app.post(`${API_PREFIX}/export/pdf`, extractUser, async (req, res) => {
+  try {
+    // Check authentication
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+    
+    // Check subscription
+    if (!req.user || (req.user.subscription.type !== 'pro' && req.user.subscription.type !== 'enterprise')) {
+      return res.status(403).json({
+        success: false,
+        message: 'PDF export is a Pro feature. Upgrade to access.',
+        requiresUpgrade: true
+      });
+    }
+    
+    const { analysisId, type } = req.body;
+    
+    if (!analysisId) {
+      return res.status(400).json({ success: false, message: 'Analysis ID required' });
+    }
+    
+    if (!type || (type !== 'summary' && type !== 'detailed')) {
+      return res.status(400).json({ success: false, message: 'Type must be "summary" or "detailed"' });
+    }
+    
+    // Get analysis from database
+    const analysis = await Analysis.findById(analysisId);
+    
+    if (!analysis) {
+      return res.status(404).json({ success: false, message: 'Analysis not found' });
+    }
+    
+    // Verify ownership
+    if (analysis.email !== req.session.email) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    
+    // Generate PDF
+    const timestamp = Date.now();
+    const filename = `aeo-report-${type}-${timestamp}.pdf`;
+    const tmpDir = path.join(__dirname, 'tmp');
+    const outputPath = path.join(tmpDir, filename);
+    
+    // Ensure tmp directory exists
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    
+    let pdfPath;
+    if (type === 'summary') {
+      pdfPath = await generateSummaryPDF(analysis, outputPath);
+    } else {
+      pdfPath = await generateDetailedPDF(analysis, outputPath);
+    }
+    
+    // Send file
+    res.download(pdfPath, filename, (err) => {
+      // Clean up file after download
+      if (fs.existsSync(pdfPath)) {
+        fs.unlinkSync(pdfPath);
+      }
+      
+      if (err) {
+        console.error('PDF download error:', err);
+        if (!res.headersSent) {
+          return res.status(500).json({ success: false, message: 'Error downloading PDF' });
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error generating PDF',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Analysis History Endpoints (Pro feature)
+const { getTrendHistory } = require('./utils/trendCalculator');
+
+app.get(`${API_PREFIX}/analyses/history`, extractUser, async (req, res) => {
+  try {
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+    
+    if (!req.user || (req.user.subscription.type !== 'pro' && req.user.subscription.type !== 'enterprise')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Analysis history is a Pro feature',
+        requiresUpgrade: true
+      });
+    }
+    
+    const { url, days = 30 } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'URL parameter required' });
+    }
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+    
+    const analyses = await Analysis.find({
+      url: url.toLowerCase().trim(),
+      email: req.session.email,
+      status: 'completed',
+      createdAt: { $gte: cutoffDate }
+    })
+    .sort({ createdAt: -1 })
+    .select('overallScore createdAt technicalFoundation.score contentStructure.score pageLevelEEAT.score queryMatch.score aiVisibility.score');
+    
+    const trendHistory = await getTrendHistory(url, req.session.email, days);
+    
+    return res.json({
+      success: true,
+      analyses: analyses.map(a => ({
+        id: a._id,
+        date: a.createdAt,
+        overallScore: a.overallScore,
+        scores: {
+          technical: a.technicalFoundation?.score || 0,
+          content: a.contentStructure?.score || 0,
+          eeat: a.pageLevelEEAT?.score || 0,
+          queryMatch: a.queryMatch?.score || 0,
+          aiVisibility: a.aiVisibility?.score || 0
+        }
+      })),
+      trendHistory
+    });
+    
+  } catch (error) {
+    console.error('History fetch error:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching history' });
+  }
+});
+
+app.get(`${API_PREFIX}/analyses/history/export`, extractUser, async (req, res) => {
+  try {
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+    
+    if (!req.user || (req.user.subscription.type !== 'pro' && req.user.subscription.type !== 'enterprise')) {
+      return res.status(403).json({
+        success: false,
+        message: 'CSV export is a Pro feature',
+        requiresUpgrade: true
+      });
+    }
+    
+    const { url, days = 30 } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'URL parameter required' });
+    }
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+    
+    const analyses = await Analysis.find({
+      url: url.toLowerCase().trim(),
+      email: req.session.email,
+      status: 'completed',
+      createdAt: { $gte: cutoffDate }
+    })
+    .sort({ createdAt: -1 });
+    
+    let csv = 'Date,Overall Score,Technical,Content,E-E-A-T,Query Match,AI Visibility\n';
+    
+    analyses.forEach(a => {
+      csv += `${new Date(a.createdAt).toLocaleDateString()},${a.overallScore},${a.technicalFoundation?.score || 0},${a.contentStructure?.score || 0},${a.pageLevelEEAT?.score || 0},${a.queryMatch?.score || 0},${a.aiVisibility?.score || 0}\n`;
+    });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=aeo-history-${Date.now()}.csv`);
+    res.send(csv);
+    
+  } catch (error) {
+    console.error('CSV export error:', error);
+    return res.status(500).json({ success: false, message: 'Error exporting CSV' });
+  }
+});
+
 // Get user's analysis history
 app.get(`${API_PREFIX}/analyses`, extractUser, async (req, res) => {
   try {
@@ -489,6 +700,91 @@ app.get(`${API_PREFIX}/analyses`, extractUser, async (req, res) => {
       success: false,
       message: 'Failed to retrieve analyses'
     });
+  }
+});
+
+// ============================================================================
+// TESTING ENDPOINTS - REMOVE BEFORE PRODUCTION
+// ============================================================================
+
+// Toggle subscription tier for testing
+app.post(`${API_PREFIX}/test/toggle-subscription`, extractUser, async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ success: false, message: 'Testing endpoints disabled in production' });
+    }
+    
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    
+    const { tier } = req.body; // 'free', 'pro', or 'enterprise'
+    
+    if (!['free', 'pro', 'enterprise'].includes(tier)) {
+      return res.status(400).json({ success: false, message: 'Invalid tier. Use: free, pro, or enterprise' });
+    }
+    
+    const user = await User.findOne({ email: req.session.email });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Update subscription
+    if (tier === 'free') {
+      user.subscription.type = 'free';
+      user.subscription.status = 'inactive';
+      user.subscription.startDate = null;
+      user.subscription.endDate = null;
+    } else {
+      user.subscription.type = tier;
+      user.subscription.status = 'active';
+      user.subscription.startDate = new Date();
+      user.subscription.endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+    }
+    
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: `Subscription updated to ${tier}`,
+      subscription: user.subscription,
+      dailyLimit: user.getDailyLimit()
+    });
+    
+  } catch (error) {
+    console.error('Toggle subscription error:', error);
+    return res.status(500).json({ success: false, message: 'Error updating subscription' });
+  }
+});
+
+// Get current user info for testing
+app.get(`${API_PREFIX}/test/user-info`, extractUser, async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ success: false, message: 'Testing endpoints disabled in production' });
+    }
+    
+    if (!req.session || !req.session.email) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    
+    const user = await User.findOne({ email: req.session.email }).select('-__v');
+    
+    return res.json({
+      success: true,
+      user: {
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        subscription: user.subscription,
+        dailyLimit: user.getDailyLimit(),
+        isVerified: user.isVerified
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get user info error:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching user info' });
   }
 });
 

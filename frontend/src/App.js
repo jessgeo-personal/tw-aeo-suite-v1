@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import apiService from './services/api';
+import HistoryPage from './pages/HistoryPage';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,6 +30,10 @@ function App() {
     setUser(userData);
   };
 
+  const handleLogout = () => {
+    setUser(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-dark-950 flex items-center justify-center">
@@ -45,12 +50,14 @@ function App() {
       <Routes>
         <Route 
           path="/" 
-          element={<LandingPage user={user} onUserUpdate={handleUserUpdate} />} 
+          element={<LandingPage user={user} onUserUpdate={handleUserUpdate} onLogout={handleLogout} />} 
         />
         <Route 
           path="/dashboard" 
-          element={<Dashboard />} 
+          element={<Dashboard user={user} onLogout={handleLogout} />} 
         />
+
+        <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </Router>
   );

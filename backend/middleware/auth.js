@@ -100,15 +100,18 @@ const checkUsageLimit = async (req, res, next) => {
       return res.status(429).json({
         success: false,
         message: `Daily limit of ${dailyLimit} analyses reached. ${
-          user?.hasActiveSubscription() 
-            ? 'Please try again tomorrow.' 
-            : user?.isVerified 
-              ? 'Upgrade to a subscription for unlimited analyses.' 
-              : 'Please register for more daily analyses or upgrade to a subscription.'
+          user?.subscription.type === 'pro' 
+            ? 'You have reached your Pro plan limit (50/day). Please try again tomorrow or upgrade to Enterprise for custom limits.' 
+            : user?.subscription.type === 'enterprise'
+              ? 'Please try again tomorrow.'
+              : user?.isVerified 
+                ? 'Upgrade to Pro (50/day) or Enterprise for higher limits.' 
+                : 'Please register for 5 daily analyses or upgrade to Pro for 50/day.'
         }`,
         limitExceeded: true,
         dailyLimit,
         currentUsage: usage.count,
+        subscriptionType: user?.subscription.type || 'free',
         isSubscribed: user?.hasActiveSubscription() || false,
         isRegistered: user?.isVerified || false
       });

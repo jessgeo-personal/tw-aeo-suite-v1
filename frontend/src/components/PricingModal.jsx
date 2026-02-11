@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Rocket, Mail } from 'lucide-react';
 import LeadFormModal from './LeadFormModal';
 
-const PricingModal = ({ isOpen, onClose, initialTab = 'subscription' }) => {
+const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = null }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [leadFormConfig, setLeadFormConfig] = useState({
     isOpen: false,
@@ -10,6 +10,10 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription' }) => {
     leadInterest: '',
     isComingSoon: false
   });
+
+  // Get user's subscription status
+  const userSubscriptionType = user?.subscription?.type || 'free';
+  const isProOrHigher = userSubscriptionType === 'pro' || userSubscriptionType === 'enterprise';
 
   // Update active tab when modal opens with different initialTab
   useEffect(() => {
@@ -189,6 +193,40 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription' }) => {
             </button>
           </div>
 
+          {/* Current Subscription Status Banner */}
+          {user && (
+            <div className={`flex-shrink-0 px-6 py-3 border-b border-dark-700 ${
+              userSubscriptionType === 'free' 
+                ? 'bg-dark-750' 
+                : userSubscriptionType === 'pro'
+                ? 'bg-gradient-to-r from-yellow-500/10 to-amber-600/10'
+                : 'bg-gradient-to-r from-purple-600/10 to-indigo-600/10'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-dark-300">Current Plan:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    userSubscriptionType === 'free'
+                      ? 'bg-dark-600 text-dark-200'
+                      : userSubscriptionType === 'pro'
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white'
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                  }`}>
+                    {userSubscriptionType === 'free' ? 'Free' : userSubscriptionType === 'pro' ? 'Pro' : 'Enterprise'}
+                  </span>
+                  {user.subscription?.endDate && (
+                    <span className="text-xs text-dark-400">
+                      • Renews {new Date(user.subscription.endDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                {isProOrHigher && (
+                  <span className="text-xs text-primary-400 font-medium">✓ You have full access</span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-8">
@@ -279,17 +317,24 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription' }) => {
                           </ul>
 
                           <button
-                            disabled={plan.disabled}
-                            onClick={() => !plan.disabled && openLeadForm(plan.name, plan.leadInterest, true)}
+                            disabled={plan.disabled || (plan.name !== 'Free' && isProOrHigher)}
+                            onClick={() => {
+                              if (plan.disabled || (plan.name !== 'Free' && isProOrHigher)) return;
+                              openLeadForm(plan.name, plan.leadInterest, true);
+                            }}
                             className={`w-full py-3 font-semibold rounded-lg transition-colors ${
                               plan.popular
-                                ? 'bg-primary-500 hover:bg-primary-600 text-white'
-                                : plan.disabled
+                                ? 'bg-primary-500 hover:bg-primary-600 text-white disabled:bg-dark-700 disabled:text-dark-500'
+                                : plan.disabled || (plan.name !== 'Free' && isProOrHigher)
                                 ? 'bg-dark-800 text-dark-500 cursor-not-allowed'
                                 : 'bg-dark-800 hover:bg-dark-700 text-white border border-dark-700'
                             }`}
                           >
-                            {plan.cta}
+                            {plan.name === 'Free' 
+                              ? plan.cta 
+                              : isProOrHigher
+                              ? 'Already Subscribed'
+                              : plan.cta}
                           </button>
                         </div>
                       );

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Download, Sparkles, RefreshCw, HelpCircle } from 'lucide-react';
 import ImprovedAnalyzerCard from '../components/ImprovedAnalyzerCard';
 import UsageBadge from '../components/UsageBadge';
+import UserMenu from '../components/UserMenu';
 import PricingModal from '../components/PricingModal';
 import FairUsePolicyModal from '../components/FairUsePolicyModal';
 import StatsBar from '../components/StatsBar';
@@ -10,7 +11,7 @@ import GuideModal from '../components/GuideModal';
 import { getScoreColor, getGradeColor, formatProcessingTime, formatUrl } from '../utils/helpers';
 
 
-const Dashboard = () => {
+const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { result: initialResult } = location.state || {};
@@ -21,6 +22,46 @@ const Dashboard = () => {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [guideModalTab, setGuideModalTab] = useState('business');
   const [showFairUseModal, setShowFairUseModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [user, setUser] = useState(userProp); // Initialize from prop
+  const [usage, setUsage] = useState(result?.usage || null); // Track usage separately
+
+  // Fetch user data and usage on component mount
+  React.useEffect(() => {
+    const fetchUserAndUsage = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/session`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          // Update usage from session data
+          if (data.usage) {
+            setUsage(data.usage);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+    fetchUserAndUsage();
+  }, []);
+
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      onLogoutProp(); // Clear user in App.js
+      navigate('/'); // Navigate to landing page
+    } catch (error) {
+      console.error('Logout failed:', error);
+      navigate('/'); // Still navigate even if logout call fails
+    }
+  };
 
   if (!result) {
     return (
@@ -38,8 +79,10 @@ const Dashboard = () => {
     );
   }
 
-  const { results, usage } = result;
+  const { results } = result;
   const { url, overallScore, overallGrade, analyzers, recommendations, processingTime, weights } = results;
+  // Use usage from state (updated from session) or fallback to result.usage
+  const currentUsage = usage || result.usage;
 
   // Determine which band the score falls into
   const getScoreBand = (score) => {
@@ -50,14 +93,40 @@ const Dashboard = () => {
     return { grade: 'F', color: 'bg-red-500', label: 'F (0-59)' };
   };
 
-  const handleExport = () => {
-    // Check if user has subscription (you'd get this from user context/state)
-    const hasSubscription = false; // TODO: Get from auth context
-    
-    if (hasSubscription) {
-      window.print();
-    } else {
-      setShowPricingModal(true);
+  const handleExportPDF = async (type) => {
+    try {
+      setIsExporting(true);
+        
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/export/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          analysisId: results._id || result?.results?._id,
+          type
+        })
+      });
+        
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Export failed');
+      }
+        
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aeo-report-${type}-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+        
+    } catch (error) {
+      console.error('PDF export error:', error);
+      alert('Failed to export PDF. ' + error.message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -119,17 +188,9 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {usage && (
-              <UsageBadge current={usage.current} limit={usage.limit} />
+            {currentUsage && (
+              <UsageBadge current={currentUsage.current} limit={currentUsage.limit} />
             )}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-white font-medium rounded-lg transition-colors text-sm border border-dark-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
-            </button>
             <button
               onClick={() => {
                 setPricingModalTab('subscription');
@@ -150,14 +211,16 @@ const Dashboard = () => {
               <HelpCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Documentation</span>
             </button>
+            {/* User Menu with Email and Logout */}
+            <UserMenu user={user} onLogout={handleLogout} />
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* New Analysis Button */}
-        <div className="mb-6">
+        {/* Action Buttons */}
+        <div className="mb-6 flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-white font-medium rounded-lg transition-colors border border-dark-700"
@@ -165,6 +228,35 @@ const Dashboard = () => {
             <ArrowLeft size={20} />
             <span>New Analysis</span>
           </button>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-white font-medium rounded-lg transition-colors text-sm border border-dark-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
+          </button>
+          {/* PDF Export Buttons - Pro Feature */}
+          {user && (user.subscription?.type === 'pro' || user.subscription?.type === 'enterprise') && (
+            <>
+              <button
+                onClick={() => handleExportPDF('summary')}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+              >
+                <Download size={16} />
+                Summary PDF
+              </button>
+              <button
+                onClick={() => handleExportPDF('detailed')}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+              >
+                <Download size={16} />
+                Detailed PDF
+              </button>
+            </>
+          )}
         </div>
 
         {/* Overall Score Card - FIXED GRADE DISPLAY */}
@@ -194,6 +286,55 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* Trend Indicator - Pro Feature */}
+            {result.trend && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') && (
+              <div className={`${
+                result.trend.trend === 'up' ? 'bg-green-900/20 border-green-700' :
+                result.trend.trend === 'down' ? 'bg-red-900/20 border-red-700' :
+                'bg-gray-800/20 border-gray-700'
+              } border rounded-lg p-4 mt-4`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">
+                      Score Trend (vs. {result.trend.daysSince} days ago)
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {result.trend.trend === 'up' && (
+                        <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {result.trend.trend === 'down' && (
+                        <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {result.trend.trend === 'same' && (
+                        <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={`text-2xl font-bold ${
+                        result.trend.trend === 'up' ? 'text-green-400' :
+                        result.trend.trend === 'down' ? 'text-red-400' :
+                        'text-gray-400'
+                      }`}>
+                        {result.trend.trend === 'same' ? '0' : `${result.trend.trend === 'up' ? '+' : '-'}${result.trend.delta || '0'}`}
+                      </span>
+                      <span className="text-sm text-gray-400">points</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Previous Score</p>
+                    <p className="text-lg font-semibold text-gray-200">{result.trend.previousScore}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(result.trend.previousDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* FIXED: Discrete grade bands with clear indicator */}
             <div className="space-y-3">
@@ -247,6 +388,20 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="space-y-4">
+            {/* Query Match Warning - No Keywords Provided */}
+            {analyzers.queryMatch && analyzers.queryMatch.grade === 'N/A' && (
+              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-yellow-400 text-xl">ℹ️</span>
+                  <div>
+                    <h4 className="font-semibold text-yellow-200 mb-1">No Keywords Provided</h4>
+                    <p className="text-yellow-200/80 text-sm">
+                      Query Match analysis requires target keywords. Run a new analysis with keywords to see query relevance scores.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {Object.entries(analyzers).map(([key, data]) => (
               <ImprovedAnalyzerCard
                 key={key}
@@ -257,6 +412,132 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
+
+        {/* Site-Level E-E-A-T - Pro Feature */}
+        {analyzers.siteLevelEEAT && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') ? (
+          <div className="mb-8 bg-dark-900 rounded-lg p-6 border border-dark-700">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  Site-Level E-E-A-T
+                  <span className="px-2 py-1 bg-sky-600 text-white text-xs rounded-full">PRO</span>
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">Domain-wide trust and authority signals</p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-bold text-white">{analyzers.siteLevelEEAT.score}</div>
+                <div className="text-sm text-gray-400">Grade: {analyzers.siteLevelEEAT.grade}</div>
+              </div>
+            </div>
+            
+            {/* Coming Soon Banner */}
+            {analyzers.siteLevelEEAT.findings?.authorityMetrics?.details?.status === 'Coming Soon' && (
+              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-yellow-200 mb-2">🚀 Domain Authority Metrics - Coming Soon</h4>
+                <p className="text-sm text-yellow-200/80 mb-3">
+                  We're adding direct integrations with leading SEO platforms:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-dark-800 rounded p-3">
+                    <div className="font-semibold text-white mb-1">Moz DA</div>
+                    <div className="text-gray-400">0-100 link authority scale</div>
+                  </div>
+                  <div className="bg-dark-800 rounded p-3">
+                    <div className="font-semibold text-white mb-1">Ahrefs DR</div>
+                    <div className="text-gray-400">0-100 backlink strength</div>
+                  </div>
+                  <div className="bg-dark-800 rounded p-3">
+                    <div className="font-semibold text-white mb-1">Semrush AS</div>
+                    <div className="text-gray-400">0-100 overall authority</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Key Findings Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="bg-dark-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-2">SSL/HTTPS</h4>
+                <div className="flex items-center gap-2">
+                  {analyzers.siteLevelEEAT.findings?.domainAge?.details?.hasSSL ? (
+                    <>
+                      <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-green-400 font-semibold">Enabled</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-red-400 font-semibold">Missing</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-dark-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-2">Trust Pages Found</h4>
+                <div className="text-2xl font-bold text-white">
+                  {analyzers.siteLevelEEAT.findings?.siteStructure?.details?.keyPagesFound?.length || 0}/5
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {analyzers.siteLevelEEAT.findings?.siteStructure?.details?.keyPagesFound?.join(', ') || 'None'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Top Recommendations */}
+            {analyzers.siteLevelEEAT.recommendations && analyzers.siteLevelEEAT.recommendations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-300 mb-2">Top Recommendations</h4>
+                {analyzers.siteLevelEEAT.recommendations.slice(0, 3).map((rec, idx) => (
+                  <div key={idx} className="bg-dark-800 rounded p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${
+                        rec.priority === 'critical' ? 'bg-red-600 text-white' :
+                        rec.priority === 'high' ? 'bg-orange-600 text-white' :
+                        'bg-gray-600 text-white'
+                      }`}>
+                        {rec.priority?.toUpperCase()}
+                      </span>
+                      <p className="text-gray-200">{typeof rec === 'string' ? rec : rec.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : !analyzers.siteLevelEEAT && (user?.subscription?.type === 'free' || !user) ? (
+          <div className="mb-8 bg-gradient-to-r from-sky-900/40 to-purple-900/40 rounded-lg p-6 border border-sky-700">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-sky-600 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-semibold text-white mb-1">
+                  Unlock Site-Level E-E-A-T Analysis
+                </h3>
+                <p className="text-gray-300 text-sm mb-3">
+                  Upgrade to Pro to analyze your entire domain's trust signals, not just individual pages.
+                </p>
+                <button 
+                  onClick={() => {
+                    setPricingModalTab('subscription');
+                    setShowPricingModal(true);
+                  }}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors font-semibold"
+                >
+                  Upgrade to Pro →
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Top Recommendations */}
         {recommendations && recommendations.length > 0 && (
@@ -347,7 +628,7 @@ const Dashboard = () => {
             {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
           </button>
           <button
-            onClick={handleExport}
+            onClick={() => handleExportPDF('summary')}
             className="px-6 py-3 bg-dark-800 hover:bg-dark-700 text-white font-semibold rounded-lg transition-colors border border-dark-700 flex items-center gap-2"
           >
             <Download size={20} />
@@ -496,6 +777,7 @@ const Dashboard = () => {
         isOpen={showPricingModal}
         onClose={() => setShowPricingModal(false)}
         initialTab={pricingModalTab}
+        user={user}
       />
       {/* Guide Modal */}
       <GuideModal

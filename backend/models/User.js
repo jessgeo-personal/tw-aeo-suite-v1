@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
   subscription: {
     type: {
       type: String,
-      enum: ['free', 'monthly', 'semi-annual', 'annual'],
+      enum: ['free', 'pro', 'enterprise'], // CHANGED: Added pro, enterprise
       default: 'free'
     },
     status: {
@@ -87,10 +87,13 @@ userSchema.methods.hasActiveSubscription = function() {
 
 // Method to get daily limit based on subscription
 userSchema.methods.getDailyLimit = function() {
-  if (this.hasActiveSubscription()) {
-    return 999; // Unlimited for subscribers
+  if (this.subscription.type === 'enterprise') {
+    return this.dailyLimit || 999; // Enterprise: Custom or default 999
   }
-  return this.isVerified ? 10 : 3; // Registered: 10, Anonymous: 3
+  if (this.subscription.type === 'pro' && this.hasActiveSubscription()) {
+    return 50; // Pro: 50 analyses/day
+  }
+  return this.isVerified ? 5 : 3; // Free verified: 5, Anonymous: 3
 };
 
 module.exports = mongoose.model('User', userSchema);

@@ -5,6 +5,7 @@ const { analyzePageLevelEEAT } = require('./pageLevelEEAT');
 const { analyzeQueryMatch } = require('./queryMatch');
 const { analyzeAIVisibility } = require('./aiVisibility');
 const { getGrade } = require('../utils/shared');
+const { analyzeSiteLevelEEAT } = require('./siteLevelEEAT');
 
 /**
  * Main analyzer orchestrator
@@ -47,6 +48,10 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
       console.log(`   Evidence: ${blockDetection.evidence.join(', ')}`);
     }
     
+    // Extract domain for site-level analysis
+    const urlObj = new URL(url);
+    const domain = urlObj.origin;
+
     // Run all 5 analyzers in parallel
     console.log('Running analyzers...');
     const [
@@ -62,6 +67,18 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
       analyzeQueryMatch($, url, targetKeywords),
       analyzeAIVisibility($, url)
     ]);
+
+    // Run site-level E-E-A-T (Pro/Enterprise feature)
+    // Note: This will always run but only be shown to Pro/Enterprise users in frontend
+    let siteLevelEEAT = null;
+    try {
+      console.log('Running site-level E-E-A-T analysis...');
+      siteLevelEEAT = await analyzeSiteLevelEEAT(domain);
+    } catch (error) {
+      console.error('Site-level E-E-A-T analysis failed:', error);
+      // Don't fail entire analysis if site-level fails
+      siteLevelEEAT = null;
+    }
     
     // Calculate weighted overall score
     const weights = {
@@ -130,7 +147,8 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
         contentStructure,
         pageLevelEEAT,
         queryMatch,
-        aiVisibility
+        aiVisibility,
+        siteLevelEEAT
       },
       recommendations: topRecommendations,
       weights,
