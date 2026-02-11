@@ -215,6 +215,8 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                     <UsageBadge current={usage.current} limit={usage.limit} className="hidden sm:flex" />
                   )} */}
                   <UserMenu user={user} onLogout={handleLogout} />
+                  {/* Only show Upgrade button for Free users */}
+                  {user.subscription?.type === 'free' || !user.subscription?.type ? (
                   <button
                     onClick={() => {
                       setPricingModalTab('subscription');
@@ -224,6 +226,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                   >
                     Upgrade
                   </button>
+                  ) : null}
                 </>
               ) : (
                 <>
