@@ -67,12 +67,14 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
     // If there's a pending analysis, run it immediately
     if (pendingAnalysis) {
       setLoading(true);
+      
+      // Declare outside try block so it's accessible in catch
+      const keywordsArray = pendingAnalysis.keywords
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k.length > 0);
+      
       try {
-        const keywordsArray = pendingAnalysis.keywords
-          .split(',')
-          .map(k => k.trim())
-          .filter(k => k.length > 0);
-
         const result = await apiService.analysis.runAnalysis(
           pendingAnalysis.url,
           keywordsArray,
@@ -85,13 +87,42 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
         // Navigate to dashboard with results
         navigate('/dashboard', { state: { result } });
       } catch (err) {
-        setError({
-          message: err.message || 'Analysis failed',
-          blockDetection: err.blockDetection || null,
-          aeoImpact: err.aeoImpact || null,
-          recommendation: err.recommendation || null
-        });
+        // Navigate to Dashboard even on error
+        const errorResult = {
+          results: {
+            url: pendingAnalysis.url,
+            targetKeywords: keywordsArray,
+            overallScore: 0,
+            overallGrade: 'F',
+            analyzers: {
+              technicalFoundation: null,
+              contentStructure: null,
+              pageLevelEEAT: null,
+              queryMatch: null,
+              aiVisibility: null,
+              siteLevelEEAT: null
+            },
+            recommendations: [],
+            processingTime: 0,
+            weights: {
+              technicalFoundation: 0.25,
+              contentStructure: 0.25,
+              pageLevelEEAT: 0.20,
+              queryMatch: 0.15,
+              aiVisibility: 0.15
+            }
+          },
+          usage: null, // Will be fetched on Dashboard mount
+          error: {
+            message: err.message || 'Analysis failed',
+            blockDetection: err.blockDetection || null,
+            aeoImpact: err.aeoImpact || null,
+            recommendation: err.recommendation || null
+          }
+        };
+        
         setPendingAnalysis(null);
+        navigate('/dashboard', { state: { result: errorResult } });
       } finally {
         setLoading(false);
       }
@@ -128,12 +159,14 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
 
     // Run analysis
     setLoading(true);
+    
+    // Declare outside try block so it's accessible in catch
+    const keywordsArray = keywords
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
+    
     try {
-      const keywordsArray = keywords
-        .split(',')
-        .map(k => k.trim())
-        .filter(k => k.length > 0);
-
       const result = await apiService.analysis.runAnalysis(
         url,
         keywordsArray,
@@ -142,18 +175,48 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
 
       // Navigate to dashboard with results
       navigate('/dashboard', { state: { result } });
-      } catch (err) {
-        // Store full error object to access blocking details
-        setError({
+    } catch (err) {
+      // CRITICAL CHANGE: Navigate to Dashboard even on error
+      // Pass error state so Dashboard can display it prominently
+      const errorResult = {
+        results: {
+          url,
+          targetKeywords: keywordsArray,
+          overallScore: 0,
+          overallGrade: 'F',
+          analyzers: {
+            technicalFoundation: null,
+            contentStructure: null,
+            pageLevelEEAT: null,
+            queryMatch: null,
+            aiVisibility: null,
+            siteLevelEEAT: null
+          },
+          recommendations: [],
+          processingTime: 0,
+          weights: {
+            technicalFoundation: 0.25,
+            contentStructure: 0.25,
+            pageLevelEEAT: 0.20,
+            queryMatch: 0.15,
+            aiVisibility: 0.15
+          }
+        },
+        usage: usage || { current: 0, limit: 5, remaining: 5 },
+        error: {
           message: err.message || 'Analysis failed',
           blockDetection: err.blockDetection || null,
           aeoImpact: err.aeoImpact || null,
           recommendation: err.recommendation || null
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+        }
+      };
+      
+      // Navigate to Dashboard with error state
+      navigate('/dashboard', { state: { result: errorResult } });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -217,15 +280,15 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                   <UserMenu user={user} onLogout={handleLogout} />
                   {/* Only show Upgrade button for Free users */}
                   {user.subscription?.type === 'free' || !user.subscription?.type ? (
-                  <button
-                    onClick={() => {
-                      setPricingModalTab('subscription');
-                      setShowPricingModal(true);
-                    }}
-                    className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-sm"
-                  >
-                    Upgrade
-                  </button>
+                    <button
+                      onClick={() => {
+                        setPricingModalTab('subscription');
+                        setShowPricingModal(true);
+                      }}
+                      className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-sm"
+                    >
+                      Upgrade
+                    </button>
                   ) : null}
                 </>
               ) : (

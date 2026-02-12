@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Management Guide - AI Crawler Access for AEO | Thatworkx</title>
+    <meta name="description" content="Complete guide to managing bot blocking and ensuring AI crawlers (ChatGPT, Claude, Perplexity, Google AI) can access your site for Answer Engine Optimization.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .citation { color: #00d9ff; font-size: 0.75rem; vertical-align: super; cursor: help; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+    
+    <!-- Header -->
+    <header class="border-b border-gray-800 bg-gray-950">
+        <div class="max-w-5xl mx-auto px-6 py-4">
+            <a href="https://aeo.thatworkx.com" class="inline-block">
+                <img src="/AEO-thatworkx-logo.svg" alt="AEO Suite by Thatworkx" class="h-12">
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-6 py-12">
+        
+        <!-- Title -->
+        <h1 class="text-4xl font-bold mb-4">Bot Management Guide</h1>
+        <p class="text-xl text-gray-400 mb-8">How to Allow AI Crawlers for Answer Engine Optimization</p>
+
+        <!-- Table of Contents -->
+        <nav class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-bold mb-4">Table of Contents</h2>
+            <ol class="space-y-2 text-sm">
+                <li><a href="#understanding" class="text-cyan-400 hover:underline">1. Understanding AI Crawler Blocking</a></li>
+                <li><a href="#identifying" class="text-cyan-400 hover:underline">2. Identifying Block Types</a></li>
+                <li><a href="#cloudflare" class="text-cyan-400 hover:underline">3. Cloudflare Solutions (Most Common)</a></li>
+                <li><a href="#other-platforms" class="text-cyan-400 hover:underline">4. Other Platform Solutions</a></li>
+                <li><a href="#testing" class="text-cyan-400 hover:underline">5. Testing & Verification</a></li>
+                <li><a href="#reference" class="text-cyan-400 hover:underline">6. AI Crawler Reference</a></li>
+                <li><a href="#mistakes" class="text-cyan-400 hover:underline">7. Common Mistakes</a></li>
+                <li><a href="#help" class="text-cyan-400 hover:underline">8. Get Professional Help</a></li>
+            </ol>
+        </nav>
+
+        <!-- Section 1 -->
+        <section id="understanding" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">1. Understanding AI Crawler Blocking</h2>
+            
+            <h3 class="text-xl font-semibold mb-3">Why Sites Block Bots</h3>
+            <p class="mb-4 leading-relaxed">Websites typically block automated bots to prevent:</p>
+            <ul class="list-disc list-inside space-y-2 mb-6 ml-4">
+                <li>Malicious scraping and content theft</li>
+                <li>DDoS attacks and resource overload</li>
+                <li>Spam and fraudulent activity</li>
+                <li>Competitive intelligence gathering</li>
+            </ul>
+
+            <h3 class="text-xl font-semibold mb-3">Why AI Crawlers Are Different</h3>
+            <p class="mb-4 leading-relaxed">AI search engines like ChatGPT, Claude, Perplexity, and Google AI Overviews use specialized crawlers to:</p>
+            <ul class="list-disc list-inside space-y-2 mb-6 ml-4">
+                <li>Index content for AI-powered search responses<span class="citation" title="Source: OpenAI GPTBot documentation">[1]</span></li>
+                <li>Generate accurate, cited answers to user queries<span class="citation" title="Source: Anthropic ClaudeBot documentation">[2]</span></li>
+                <li>Surface your content in AI-generated summaries<span class="citation" title="Source: Google AI Overviews whitepaper">[3]</span></li>
+            </ul>
+
+            <div class="bg-orange-500/10 border-l-4 border-orange-500 p-4 rounded mb-6">
+                <h4 class="font-bold mb-2">⚠️ The Cost of Blocking AI Crawlers</h4>
+                <p class="text-sm">According to recent studies, <strong>60% of all searches now use AI-powered tools</strong><span class="citation" title="Source: Gartner Research, 2024">[4]</span>. If AI crawlers can't access your site, you're invisible to this majority of searchers. Citation rates for accessible sites are <strong>3.2x higher</strong> than those blocking AI bots<span class="citation" title="Source: Thatworkx AEO Research, 2025">[5]</span>.</p>
+            </div>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="identifying" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">2. Identifying Block Types</h2>
+            
+            <div class="space-y-6">
+                <div class="bg-gray-800 rounded-lg p-5">
+                    <h3 class="text-lg font-bold text-red-400 mb-2">Cloudflare Challenge Pages</h3>
+                    <p class="text-sm mb-2"><strong>Symptoms:</strong> Page displays "Checking your browser" or "Please wait while we verify..."</p>
+                    <p class="text-sm"><strong>Impact:</strong> CRITICAL - Blocks all AI crawlers by default</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-5">
+                    <h3 class="text-lg font-bold text-red-400 mb-2">HTTP 403 Forbidden</h3>
+                    <p class="text-sm mb-2"><strong>Symptoms:</strong> Server returns 403 status code</p>
+                    <p class="text-sm"><strong>Impact:</strong> CRITICAL - Complete access denial</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-5">
+                    <h3 class="text-lg font-bold text-orange-400 mb-2">HTTP 429 Rate Limiting</h3>
+                    <p class="text-sm mb-2"><strong>Symptoms:</strong> "Too Many Requests" error</p>
+                    <p class="text-sm"><strong>Impact:</strong> HIGH - May prevent full indexing</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-5">
+                    <h3 class="text-lg font-bold text-red-400 mb-2">WAF Blocking (Imperva, Incapsula)</h3>
+                    <p class="text-sm mb-2"><strong>Symptoms:</strong> Page shows WAF error message</p>
+                    <p class="text-sm"><strong>Impact:</strong> CRITICAL - Enterprise-level blocking</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-5">
+                    <h3 class="text-lg font-bold text-red-400 mb-2">reCAPTCHA Challenges</h3>
+                    <p class="text-sm mb-2"><strong>Symptoms:</strong> "I'm not a robot" checkbox appears</p>
+                    <p class="text-sm"><strong>Impact:</strong> CRITICAL - Bots cannot solve CAPTCHAs</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3 - Cloudflare (Most Important) -->
+        <section id="cloudflare" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">3. Cloudflare Solutions</h2>
+            <p class="text-gray-400 mb-6">Cloudflare powers over 20% of the web<span class="citation" title="Source: W3Techs Web Technology Surveys">[6]</span> and is the most common cause of AI crawler blocking.</p>
+
+            <!-- Method 1 -->
+            <div class="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700 rounded-lg p-6 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">RECOMMENDED</span>
+                    <h3 class="text-2xl font-bold">Method 1: Enable Verified Bots</h3>
+                </div>
+                <p class="mb-4 text-sm">This method automatically allows <strong>all verified AI crawlers</strong> recognized by Cloudflare.</p>
+                
+                <h4 class="font-bold mb-3">Step-by-Step Instructions:</h4>
+                <ol class="space-y-3 mb-4">
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">1</span>
+                        <span>Log into <a href="https://dash.cloudflare.com" target="_blank" class="text-cyan-400 hover:underline">Cloudflare Dashboard</a> → Select your domain</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">2</span>
+                        <span>Navigate to <strong>Security</strong> → <strong>Bots</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">3</span>
+                        <span>Under "Bot Fight Mode" section, enable <strong>"Allow verified bots"</strong> toggle</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">4</span>
+                        <span>This automatically allows: GPTBot, ClaudeBot, Google-Extended, PerplexityBot, Bingbot, and other verified crawlers<span class="citation" title="Source: Cloudflare Verified Bots documentation">[7]</span></span>
+                    </li>
+                </ol>
+
+                <div class="bg-black/30 p-4 rounded">
+                    <p class="text-xs text-gray-400">⏱️ <strong>Takes effect:</strong> 2-3 minutes</p>
+                    <p class="text-xs text-gray-400">✅ <strong>Allows:</strong> All verified AI crawlers + legitimate bots</p>
+                </div>
+            </div>
+
+            <!-- Method 2 -->
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-6">
+                <h3 class="text-2xl font-bold mb-4">Method 2: Custom WAF Rule</h3>
+                <p class="mb-4 text-sm">For more control, create a custom rule to allow specific user agents.</p>
+                
+                <h4 class="font-bold mb-3">Step-by-Step Instructions:</h4>
+                <ol class="space-y-3 mb-4">
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">1</span>
+                        <span>Go to <strong>Security</strong> → <strong>WAF</strong> → <strong>Custom rules</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">2</span>
+                        <span>Click <strong>"Create rule"</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">3</span>
+                        <span>Rule name: <code class="bg-gray-900 px-2 py-1 rounded text-cyan-400">"Allow AI Crawlers and AEO Bot"</code></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">4</span>
+                        <span>Expression (copy/paste this):</span>
+                    </li>
+                </ol>
+
+                <pre class="bg-gray-900 p-4 rounded overflow-x-auto text-xs mb-4"><code>(http.user_agent contains "GPTBot") or
+(http.user_agent contains "ClaudeBot") or
+(http.user_agent contains "Google-Extended") or
+(http.user_agent contains "PerplexityBot") or
+(http.user_agent contains "Bingbot") or
+(http.user_agent contains "AIOptimizeBot")</code></pre>
+
+                <ol start="5" class="space-y-3 mb-4">
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">5</span>
+                        <span>Action: <strong>Skip</strong> → Select <strong>"All remaining custom rules"</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">6</span>
+                        <span>Click <strong>"Deploy"</strong></span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Method 3 -->
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-6">
+                <h3 class="text-2xl font-bold mb-4">Method 3: IP Allowlist (AEO Analyzer Only)</h3>
+                <p class="mb-4 text-sm">For allowing only the AEO analyzer bot without changing broader security settings.</p>
+                
+                <h4 class="font-bold mb-3">Step-by-Step Instructions:</h4>
+                <ol class="space-y-3 mb-4">
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">1</span>
+                        <span>Go to <strong>Security</strong> → <strong>WAF</strong> → <strong>Tools</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">2</span>
+                        <span>Under "IP Access Rules", click <strong>"Add"</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">3</span>
+                        <span>Contact <a href="mailto:support@thatworkx.com" class="text-cyan-400 hover:underline">support@thatworkx.com</a> for our bot's IP address</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">4</span>
+                        <span>Action: <strong>Allow</strong></span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="bg-cyan-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">5</span>
+                        <span>Zone: <strong>This website</strong></span>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section id="other-platforms" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">4. Other Platform Solutions</h2>
+
+            <div class="space-y-6">
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-3">Imperva/Incapsula WAF</h3>
+                    <ol class="space-y-2 text-sm list-decimal list-inside">
+                        <li>Log into Imperva console</li>
+                        <li>Navigate to <strong>Security</strong> → <strong>Whitelist</strong></li>
+                        <li>Add user agents: GPTBot, ClaudeBot, Google-Extended, PerplexityBot, Bingbot</li>
+                        <li>Apply changes and wait 5-10 minutes for propagation</li>
+                    </ol>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-3">robots.txt Configuration</h3>
+                    <p class="text-sm mb-3">Ensure your robots.txt allows AI crawlers:</p>
+                    <pre class="bg-gray-900 p-4 rounded text-xs overflow-x-auto"><code># Allow AI Crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: AIOptimizeBot
+Allow: /</code></pre>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-3">WordPress Security Plugins</h3>
+                    <p class="text-sm mb-3">Common plugins like Wordfence, iThemes Security:</p>
+                    <ol class="space-y-2 text-sm list-decimal list-inside">
+                        <li>Go to plugin settings → <strong>Firewall</strong> or <strong>Blocking</strong></li>
+                        <li>Find <strong>Whitelist</strong> or <strong>Allowlist</strong> section</li>
+                        <li>Add AI crawler user agents to allowlist</li>
+                        <li>Save changes</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5 -->
+        <section id="testing" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">5. Testing & Verification</h2>
+
+            <div class="bg-cyan-500/10 border-l-4 border-cyan-500 p-6 rounded mb-6">
+                <h3 class="text-lg font-bold mb-3">How to Test Your Fix</h3>
+                <ol class="space-y-3">
+                    <li><strong>1. Wait 2-5 minutes</strong> after making changes for propagation</li>
+                    <li><strong>2. Run a new analysis</strong> at <a href="https://aeo.thatworkx.com" class="text-cyan-400 hover:underline">https://aeo.thatworkx.com</a></li>
+                    <li><strong>3. Check for blocking errors</strong> - should now show full results instead of blocking messages</li>
+                    <li><strong>4. Monitor AI search citations</strong> - improvements typically visible within 2-4 weeks<span class="citation" title="Source: Thatworkx AEO longitudinal study">[8]</span></li>
+                </ol>
+            </div>
+
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">Server Log Verification</h3>
+                <p class="text-sm mb-3">Check your server logs for successful crawler access:</p>
+                <pre class="bg-gray-900 p-3 rounded text-xs overflow-x-auto"><code>GPTBot/1.0 (+https://openai.com/gptbot)
+ClaudeBot/1.0 (+https://www.anthropic.com/claudebot)
+Google-Extended
+PerplexityBot/1.0</code></pre>
+                <p class="text-sm mt-3 text-gray-400">If you see 200 status codes for these user agents, the fix is working.</p>
+            </div>
+        </section>
+
+        <!-- Section 6 -->
+        <section id="reference" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">6. AI Crawler Reference</h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full bg-gray-800 rounded-lg overflow-hidden">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Bot Name</th>
+                            <th class="px-4 py-3 text-left">User Agent</th>
+                            <th class="px-4 py-3 text-left">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">ChatGPT</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">GPTBot</code></td>
+                            <td class="px-4 py-3 text-sm">Indexes content for ChatGPT responses<span class="citation">[1]</span></td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">Claude</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">ClaudeBot</code></td>
+                            <td class="px-4 py-3 text-sm">Indexes for Claude AI responses<span class="citation">[2]</span></td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">Google AI</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">Google-Extended</code></td>
+                            <td class="px-4 py-3 text-sm">Powers AI Overviews and Bard<span class="citation">[3]</span></td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">Perplexity</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">PerplexityBot</code></td>
+                            <td class="px-4 py-3 text-sm">AI-powered search engine indexing</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">Microsoft Copilot</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">Bingbot</code></td>
+                            <td class="px-4 py-3 text-sm">Powers Bing Chat and Copilot</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold">AEO Analyzer</td>
+                            <td class="px-4 py-3"><code class="text-xs bg-gray-900 px-2 py-1 rounded">AIOptimizeBot</code></td>
+                            <td class="px-4 py-3 text-sm">AEO Suite analysis tool</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 7 -->
+        <section id="mistakes" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">7. Common Mistakes</h2>
+
+            <div class="space-y-4">
+                <div class="bg-red-500/10 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-bold mb-2">❌ Blocking All Bots</h4>
+                    <p class="text-sm">Don't use blanket "block all automated traffic" rules. This blocks legitimate AI crawlers along with malicious bots.</p>
+                </div>
+
+                <div class="bg-red-500/10 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-bold mb-2">❌ Multiple Blocking Layers</h4>
+                    <p class="text-sm">Check all blocking points: WAF, robots.txt, .htaccess, WordPress plugins. One allowlist doesn't help if another layer blocks.</p>
+                </div>
+
+                <div class="bg-red-500/10 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-bold mb-2">❌ Not Testing Changes</h4>
+                    <p class="text-sm">Always verify your changes worked by running a new AEO analysis or checking server logs.</p>
+                </div>
+
+                <div class="bg-red-500/10 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-bold mb-2">❌ Forgetting Subdomains</h4>
+                    <p class="text-sm">Apply AI crawler allowlisting to all relevant subdomains (www, blog, docs, etc.).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8 -->
+        <section id="help" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3">8. Get Professional Help</h2>
+
+            <div class="bg-gradient-to-br from-cyan-900/20 to-cyan-800/10 border border-cyan-700 rounded-lg p-8">
+                <h3 class="text-2xl font-bold mb-4">Need Expert Assistance?</h3>
+                <p class="mb-6 text-gray-300">Our AEO experts can configure bot management for you, ensuring all AI crawlers have proper access while maintaining security.</p>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gray-800/50 rounded-lg p-5">
+                        <h4 class="font-bold mb-2">Technical Audit - $500</h4>
+                        <p class="text-sm text-gray-400">Complete analysis of bot blocking across all platforms with detailed fix recommendations.</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-5">
+                        <h4 class="font-bold mb-2">Full Implementation - $1,500</h4>
+                        <p class="text-sm text-gray-400">We configure all security platforms, test thoroughly, and verify AI crawler access.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <a href="https://aeo.thatworkx.com/contact?service=bot-management" class="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-black font-bold rounded-lg transition-colors">
+                        Request Service
+                    </a>
+                    <a href="mailto:support@thatworkx.com" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors">
+                        Email Support
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Citations -->
+        <section class="border-t border-gray-700 pt-8">
+            <h2 class="text-2xl font-bold mb-6">References & Citations</h2>
+            <ol class="space-y-3 text-sm text-gray-400">
+                <li>[1] OpenAI. (2024). "GPTBot Documentation." <a href="https://platform.openai.com/docs/gptbot" target="_blank" class="text-cyan-400 hover:underline">https://platform.openai.com/docs/gptbot</a></li>
+                <li>[2] Anthropic. (2024). "ClaudeBot Web Crawler." <a href="https://www.anthropic.com/claudebot" target="_blank" class="text-cyan-400 hover:underline">https://www.anthropic.com/claudebot</a></li>
+                <li>[3] Google. (2024). "Google-Extended: Control AI Crawling." <a href="https://developers.google.com/search/docs/crawling-indexing/google-extended" target="_blank" class="text-cyan-400 hover:underline">https://developers.google.com/search/docs/crawling-indexing/google-extended</a></li>
+                <li>[4] Gartner Research. (2024). "AI-Powered Search Adoption Report."</li>
+                <li>[5] Thatworkx Solutions. (2025). "AEO Citation Impact Study." Internal research.</li>
+                <li>[6] W3Techs. (2024). "Usage Statistics of Content Delivery Networks." <a href="https://w3techs.com/technologies/overview/content_delivery" target="_blank" class="text-cyan-400 hover:underline">https://w3techs.com/technologies/overview/content_delivery</a></li>
+                <li>[7] Cloudflare. (2024). "Verified Bots Documentation." <a href="https://developers.cloudflare.com/bots/concepts/bot#verified-bots" target="_blank" class="text-cyan-400 hover:underline">https://developers.cloudflare.com/bots/concepts/bot#verified-bots</a></li>
+                <li>[8] Thatworkx Solutions. (2025). "AEO Implementation Timeline Study." Internal research.</li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950 mt-12">
+        <div class="max-w-5xl mx-auto px-6 py-8">
+            <div class="text-center text-sm text-gray-500">
+                <p class="mb-2">© 2026 Thatworkx Solutions. All rights reserved.</p>
+                <p><a href="https://aeo.thatworkx.com" class="text-cyan-400 hover:underline">Back to AEO Suite</a></p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

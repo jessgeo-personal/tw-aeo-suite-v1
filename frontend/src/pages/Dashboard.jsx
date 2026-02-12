@@ -9,13 +9,15 @@ import FairUsePolicyModal from '../components/FairUsePolicyModal';
 import StatsBar from '../components/StatsBar';
 import GuideModal from '../components/GuideModal';
 import { getScoreColor, getGradeColor, formatProcessingTime, formatUrl } from '../utils/helpers';
-
+// At top of Dashboard.jsx (around line 11)
+import BotBlockingAlert from '../components/BotBlockingAlert';
 
 const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { result: initialResult } = location.state || {};
   const [result, setResult] = useState(initialResult);
+  const [analysisId, setAnalysisId] = useState(initialResult?.analysisId || null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [pricingModalTab, setPricingModalTab] = useState('subscription');
@@ -80,9 +82,33 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   }
 
   const { results } = result;
-  const { url, overallScore, overallGrade, analyzers, recommendations, processingTime, weights } = results;
+  const { 
+    url, 
+    overallScore, 
+    overallGrade, 
+    analyzers = {}, 
+    recommendations = [], 
+    processingTime = 0, 
+    weights = {
+      technicalFoundation: 0.25,
+      contentStructure: 0.25,
+      pageLevelEEAT: 0.20,
+      queryMatch: 0.15,
+      aiVisibility: 0.15
+    }
+  } = results || {};
+  
   // Use usage from state (updated from session) or fallback to result.usage
   const currentUsage = usage || result.usage;
+  
+  // Check if there's an error (bot blocking, etc.)
+  const analysisError = result.error || null;
+  
+  // DEBUG: Log error data to see what we're receiving
+  if (analysisError) {
+    console.log('🐛 Analysis Error Data:', JSON.stringify(analysisError, null, 2));
+    console.log('🐛 Block Detection:', analysisError.blockDetection);
+  }
 
   // Determine which band the score falls into
   const getScoreBand = (score) => {
@@ -96,13 +122,18 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   const handleExportPDF = async (type) => {
     try {
       setIsExporting(true);
+      
+      // Check if we have an analysisId
+      if (!analysisId) {
+        throw new Error('Analysis ID not found. Please run a new analysis.');
+      }
         
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/export/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          analysisId: results._id || result?.results?._id,
+          analysisId: analysisId,  // Use the stored analysisId
           type
         })
       });
@@ -147,24 +178,30 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Analysis failed');
-      }
-
       const data = await response.json();
       
+      // Handle both success and bot blocking cases
       if (data.success) {
         // Update the result state with new analysis
         setResult({
           results: data.results,
-          usage: data.usage
+          usage: data.usage,
+          analysisId: data.analysisId  // Store the analysisId
+        });
+        setAnalysisId(data.analysisId);  // Update analysisId state
+      } else if (data.error) {
+        // Bot blocking or other analysis error
+        setResult({
+          results: results,  // Keep existing results for display
+          usage: data.usage || usage,
+          error: data  // Store full error object with blockDetection
         });
       } else {
-        alert('Refresh failed: ' + (data.error || 'Unknown error'));
+        alert('Refresh failed: Unknown error');
       }
     } catch (error) {
       console.error('Refresh error:', error);
-      alert('Failed to refresh analysis. Please try again.');
+      alert('Failed to refresh analysis. Network error - please check your connection.');
     } finally {
       setIsRefreshing(false);
     }
@@ -258,6 +295,90 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
             </>
           )}
         </div>
+
+        {/* Analysis Summary Bar */}
+        <div className="mb-6 bg-dark-800/50 border border-dark-700 rounded-lg px-5 py-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            {/* URL */}
+            <div className="flex items-center gap-2">
+              <ExternalLink size={14} className="text-primary-500" />
+              <span className="text-gray-400">Analyzing:</span>
+              <a 
+                href={url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white font-medium hover:text-primary-500 transition-colors max-w-md truncate"
+              >
+                {formatUrl(url)}
+              </a>
+            </div>
+
+            {/* Separator */}
+            <div className="hidden sm:block w-px h-4 bg-dark-600"></div>
+
+            {/* Date/Time */}
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-gray-400">Analyzed:</span>
+              <span className="text-white font-medium">
+                {new Date(results.timestamp || Date.now()).toLocaleString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </span>
+            </div>
+
+            {/* Separator */}
+            <div className="hidden sm:block w-px h-4 bg-dark-600"></div>
+
+            {/* Processing Time */}
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span className="text-gray-400">Completed in:</span>
+              <span className="text-white font-medium">{formatProcessingTime(processingTime)}</span>
+            </div>
+
+            {/* Separator */}
+            <div className="hidden sm:block w-px h-4 bg-dark-600"></div>
+
+            {/* Status Summary */}
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-gray-400">Status:</span>
+              <span className={`font-bold ${
+                overallScore >= 90 ? 'text-green-400' :
+                overallScore >= 70 ? 'text-blue-400' :
+                overallScore >= 50 ? 'text-yellow-400' :
+                overallScore >= 30 ? 'text-orange-400' :
+                'text-red-400'
+              }`}>
+                {analysisError ? 'CRITICAL - Bot Blocking' :
+                 overallScore >= 90 ? 'EXCELLENT' :
+                 overallScore >= 70 ? 'GOOD' :
+                 overallScore >= 50 ? 'NEEDS WORK' :
+                 overallScore >= 30 ? 'POOR' :
+                 'CRITICAL'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bot Blocking Alert - BotBlockingAlert Component */}
+        {analysisError && analysisError.blockDetection && analysisError.blockDetection.isBlocked && (
+          <BotBlockingAlert 
+            url={url}
+            botBlocking={analysisError.blockDetection}
+          />
+        )}
 
         {/* Overall Score Card - FIXED GRADE DISPLAY */}
         <div className="mb-8">
@@ -402,12 +523,13 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
                 </div>
               </div>
             )}
-            {Object.entries(analyzers).map(([key, data]) => (
+            {analyzers && Object.entries(analyzers).map(([key, data]) => (
               <ImprovedAnalyzerCard
                 key={key}
                 analyzerKey={key}
                 analyzerData={data}
                 weight={weights[key]}
+                hasError={!!analysisError}
               />
             ))}
           </div>

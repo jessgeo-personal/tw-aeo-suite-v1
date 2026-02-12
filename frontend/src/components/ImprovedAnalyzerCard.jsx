@@ -10,11 +10,39 @@ const iconMap = {
   aiVisibility: Eye,
 };
 
-const ImprovedAnalyzerCard = ({ analyzerKey, analyzerData, weight }) => {
+const ImprovedAnalyzerCard = ({ analyzerKey, analyzerData, weight, hasError = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedRecs, setExpandedRecs] = useState({});
   
-  if (!analyzerData) return null;
+  // If no data and there's an error, show placeholder
+  if (!analyzerData) {
+    if (hasError) {
+      const Icon = iconMap[analyzerKey] || FileText;
+      return (
+        <div className="bg-dark-800 border border-dark-700 rounded-xl overflow-hidden opacity-60">
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center">
+                <Icon className="w-6 h-6 text-red-500" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold text-white mb-1">
+                  {getAnalyzerDisplayName(analyzerKey)}
+                </h3>
+                <p className="text-sm text-red-400">
+                  Unable to analyze due to bot blocking
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-red-400">N/A</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   const Icon = iconMap[analyzerKey] || FileText;
   const { score, grade, findings, recommendations, details } = analyzerData;
@@ -87,12 +115,26 @@ const ImprovedAnalyzerCard = ({ analyzerKey, analyzerData, weight }) => {
         <div className="flex items-center gap-4">
           {/* Score */}
           <div className="text-right">
-            <div className={`text-3xl font-bold ${getScoreColor(score)}`}>
-              {score}
-            </div>
-            <div className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-bold ${getGradeColor(grade)}`}>
-              Grade {grade}
-            </div>
+            {/* Special case: Query Match with no keywords */}
+            {analyzerKey === 'queryMatch' && grade === 'N/A' ? (
+              <>
+                <div className="text-lg font-semibold text-dark-400">
+                  No queries searched
+                </div>
+                <div className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-bold bg-dark-700 text-dark-400">
+                  N/A
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`text-3xl font-bold ${getScoreColor(score)}`}>
+                  {score}
+                </div>
+                <div className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-bold ${getGradeColor(grade)}`}>
+                  Grade {grade}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Expand icon */}
