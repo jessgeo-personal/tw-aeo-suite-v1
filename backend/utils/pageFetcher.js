@@ -10,34 +10,40 @@ const cheerio = require('cheerio');
 function detectBotBlocking(error, response = null) {
   const detection = {
     isBlocked: false,
-    blockType: null,
-    evidence: [],
-    recommendation: '',
-    aeoImpact: ''
+    blockingType: null,
+    affectedCrawlers: [],
+    evidence: {
+      detectedSignatures: [],
+      httpStatusCode: null,
+      responseIndicators: []
+    },
+    impact: '',
+    recommendation: ''
   };
 
   // Check HTTP status codes that indicate blocking
   if (response && response.status) {
     const status = response.status;
+    detection.evidence.httpStatusCode = status;
     
     if (status === 403) {
       detection.isBlocked = true;
-      detection.blockType = 'HTTP 403 Forbidden';
-      detection.evidence.push('Server returned 403 Forbidden - access denied');
+      detection.blockingType = 'http_403_forbidden';
+      detection.evidence.detectedSignatures.push('Server returned 403 Forbidden - access denied');
       detection.recommendation = 'Check robots.txt and ensure your site allows AI crawlers';
-      detection.aeoImpact = 'CRITICAL: AI search engines are likely being blocked from accessing your content';
+      detection.impact = 'CRITICAL: AI search engines are likely being blocked from accessing your content';
     } else if (status === 429) {
       detection.isBlocked = true;
-      detection.blockType = 'Rate Limiting';
-      detection.evidence.push('Server returned 429 Too Many Requests');
+      detection.blockingType = 'rate_limiting';
+      detection.evidence.detectedSignatures.push('Server returned 429 Too Many Requests');
       detection.recommendation = 'Adjust rate limiting rules to allow legitimate AI crawlers';
-      detection.aeoImpact = 'HIGH: Aggressive rate limiting may prevent AI engines from fully indexing your content';
+      detection.impact = 'HIGH: Aggressive rate limiting may prevent AI engines from fully indexing your content';
     } else if (status === 503) {
       detection.isBlocked = true;
-      detection.blockType = 'Service Unavailable / WAF';
-      detection.evidence.push('Server returned 503 Service Unavailable');
+      detection.blockingType = 'service_unavailable_waf';
+      detection.evidence.detectedSignatures.push('Server returned 503 Service Unavailable');
       detection.recommendation = 'Check if WAF/CDN is blocking automated requests';
-      detection.aeoImpact = 'HIGH: Web Application Firewall may be blocking AI crawlers';
+      detection.impact = 'HIGH: Web Application Firewall may be blocking AI crawlers';
     }
   }
 
@@ -48,116 +54,141 @@ function detectBotBlocking(error, response = null) {
     // Cloudflare challenge detection
     if (html.includes('cloudflare') && (html.includes('challenge') || html.includes('checking your browser'))) {
       detection.isBlocked = true;
-      detection.blockType = 'Cloudflare Bot Challenge';
-      detection.evidence.push('Cloudflare bot challenge page detected');
+      detection.blockingType = 'cloudflare_challenge';
+      detection.evidence.detectedSignatures.push('Cloudflare bot challenge page detected');
+      detection.evidence.responseIndicators.push('Challenge page HTML pattern detected');
       
       // Detailed step-by-step instructions
       detection.recommendation = `CLOUDFLARE FIX: Allow AI Crawlers & AEO Bot
 
-      METHOD 1: Enable Verified Bots (Recommended - Allows ALL legitimate AI bots)
-      1. Log into Cloudflare Dashboard → Select your domain
-      2. Go to Security → Bots
-      3. Under "Bot Fight Mode" section:
-        - Enable "Allow verified bots" toggle
-        - This automatically allows: GPTBot, ClaudeBot, Google-Extended, Perplexity, Bingbot, and other verified crawlers
+METHOD 1: Enable Verified Bots (Recommended - Allows ALL legitimate AI bots)
+1. Log into Cloudflare Dashboard → Select your domain
+2. Go to Security → Bots
+3. Under "Bot Fight Mode" section:
+  - Enable "Allow verified bots" toggle
+  - This automatically allows: GPTBot, ClaudeBot, Google-Extended, Perplexity, Bingbot, and other verified crawlers
 
-      METHOD 2: Custom WAF Rule for Specific Bots (More Control)
-      1. Go to Security → WAF → Custom rules
-      2. Click "Create rule"
-      3. Rule name: "Allow AI Crawlers and AEO Bot"
-      4. Expression:
-        (http.user_agent contains "GPTBot") or
-        (http.user_agent contains "ClaudeBot") or
-        (http.user_agent contains "Google-Extended") or
-        (http.user_agent contains "PerplexityBot") or
-        (http.user_agent contains "Bingbot") or
-        (http.user_agent contains "AIOptimizeBot")
-      5. Action: Skip → Select "All remaining custom rules"
-      6. Click "Deploy"
+METHOD 2: Custom WAF Rule for Specific Bots (More Control)
+1. Go to Security → WAF → Custom rules
+2. Click "Create rule"
+3. Rule name: "Allow AI Crawlers and AEO Bot"
+4. Expression:
+  (http.user_agent contains "GPTBot") or
+  (http.user_agent contains "ClaudeBot") or
+  (http.user_agent contains "Google-Extended") or
+  (http.user_agent contains "PerplexityBot") or
+  (http.user_agent contains "Bingbot") or
+  (http.user_agent contains "AIOptimizeBot")
+5. Action: Skip → Select "All remaining custom rules"
+6. Click "Deploy"
 
-      METHOD 3: IP Allowlist for AEO Analyzer (For our bot only)
-      1. Go to Security → WAF → Tools
-      2. Under "IP Access Rules"
-      3. Add IP: [Contact support@thatworkx.com for our bot's IP]
-      4. Action: Allow
-      5. Zone: This website
+METHOD 3: IP Allowlist for AEO Analyzer (For our bot only)
+1. Go to Security → WAF → Tools
+2. Under "IP Access Rules"
+3. Add IP: [Contact support@thatworkx.com for our bot's IP]
+4. Action: Allow
+5. Zone: This website
 
-      VERIFY IT WORKS:
-      After configuration, test at: https://aeo.thatworkx.com
-      Run a new analysis - you should see full results instead of blocking errors.
+VERIFY IT WORKS:
+After configuration, test at: https://aeo.thatworkx.com
+Run a new analysis - you should see full results instead of blocking errors.
 
-      IMPORTANT: These changes typically take effect within 2-3 minutes.`;
+IMPORTANT: These changes typically take effect within 2-3 minutes.`;
       
-      detection.aeoImpact = 'CRITICAL: Cloudflare is blocking AI search engines (ChatGPT, Claude, Perplexity, Google AI) AND the AEO analyzer. This means AI-powered search tools CANNOT access your content to include it in their answers. You are invisible to 60% of searches that now use AI.';
+      detection.impact = 'CRITICAL: Cloudflare is blocking AI search engines (ChatGPT, Claude, Perplexity, Google AI) AND the AEO analyzer. This means AI-powered search tools CANNOT access your content to include it in their answers. You are invisible to 60% of searches that now use AI.';
       
       // Add specific bot list
-      detection.blockedBots = [
-        { name: 'ChatGPT (GPTBot)', userAgent: 'GPTBot', impact: 'Cannot answer questions about your content' },
-        { name: 'Claude (ClaudeBot)', userAgent: 'ClaudeBot', impact: 'Cannot cite your content in responses' },
-        { name: 'Perplexity (PerplexityBot)', userAgent: 'PerplexityBot', impact: 'Cannot include you in AI-powered search results' },
-        { name: 'Google AI (Google-Extended)', userAgent: 'Google-Extended', impact: 'Cannot show your content in AI Overviews' },
-        { name: 'Microsoft Copilot (Bingbot)', userAgent: 'Bingbot', impact: 'Cannot reference your content in Copilot answers' },
-        { name: 'AEO Analyzer (AIOptimizeBot)', userAgent: 'AIOptimizeBot', impact: 'Cannot analyze your AEO readiness' }
+      detection.affectedCrawlers = [
+        'ChatGPT (GPTBot)',
+        'Claude (ClaudeBot)',
+        'Perplexity (PerplexityBot)',
+        'Google AI (Google-Extended)',
+        'Microsoft Copilot (Bingbot)',
+        'AEO Analyzer (AIOptimizeBot)'
       ];
     }
     
     // Imperva/Incapsula detection
     if (html.includes('incapsula') || html.includes('imperva')) {
       detection.isBlocked = true;
-      detection.blockType = 'Imperva/Incapsula WAF';
-      detection.evidence.push('Imperva/Incapsula WAF detected');
+      detection.blockingType = 'imperva_incapsula_waf';
+      detection.evidence.detectedSignatures.push('Imperva/Incapsula WAF detected');
+      detection.evidence.responseIndicators.push('WAF signature in HTML');
       detection.recommendation = 'Whitelist AI crawler IPs in Imperva/Incapsula settings';
-      detection.aeoImpact = 'CRITICAL: WAF is blocking AI search engine crawlers';
+      detection.impact = 'CRITICAL: WAF is blocking AI search engine crawlers';
+      detection.affectedCrawlers = [
+        'ChatGPT (GPTBot)',
+        'Claude (ClaudeBot)',
+        'Perplexity (PerplexityBot)',
+        'Google AI (Google-Extended)',
+        'Microsoft Copilot (Bingbot)'
+      ];
     }
     
     // reCAPTCHA detection
     if (html.includes('recaptcha') || html.includes('google.com/recaptcha')) {
       detection.isBlocked = true;
-      detection.blockType = 'reCAPTCHA Challenge';
-      detection.evidence.push('Google reCAPTCHA challenge detected');
+      detection.blockingType = 'recaptcha_challenge';
+      detection.evidence.detectedSignatures.push('Google reCAPTCHA challenge detected');
+      detection.evidence.responseIndicators.push('reCAPTCHA script detected');
       detection.recommendation = 'Implement selective reCAPTCHA that doesn\'t block AI crawlers';
-      detection.aeoImpact = 'CRITICAL: reCAPTCHA prevents AI engines from accessing content';
+      detection.impact = 'CRITICAL: reCAPTCHA prevents AI engines from accessing content';
+      detection.affectedCrawlers = [
+        'ChatGPT (GPTBot)',
+        'Claude (ClaudeBot)',
+        'Perplexity (PerplexityBot)',
+        'Google AI (Google-Extended)'
+      ];
     }
     
     // Generic "Access Denied" patterns
     if (html.includes('access denied') || html.includes('blocked') || html.includes('forbidden')) {
       detection.isBlocked = true;
-      detection.blockType = 'Access Denied Page';
-      detection.evidence.push('Generic access denied message detected in page content');
+      detection.blockingType = 'access_denied';
+      detection.evidence.detectedSignatures.push('Generic access denied message detected in page content');
+      detection.evidence.responseIndicators.push('Blocking keywords in HTML');
       detection.recommendation = 'Review server security rules and allow legitimate crawlers';
-      detection.aeoImpact = 'HIGH: Generic blocking may affect AI crawler access';
+      detection.impact = 'HIGH: Generic blocking may affect AI crawler access';
+      detection.affectedCrawlers = ['All AI crawlers'];
     }
   }
 
   // Check timeout errors
   if (error && (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED')) {
     detection.isBlocked = true;
-    detection.blockType = 'Connection Timeout';
-    detection.evidence.push('Request timed out after 30 seconds');
+    detection.blockingType = 'connection_timeout';
+    detection.evidence.detectedSignatures.push('Request timed out after 30 seconds');
+    detection.evidence.responseIndicators.push('Network timeout');
     detection.recommendation = 'Server response time may be too slow or deliberately throttled for bots';
-    detection.aeoImpact = 'MEDIUM: Slow response times may cause AI crawlers to give up before indexing';
+    detection.impact = 'MEDIUM: Slow response times may cause AI crawlers to give up before indexing';
+    detection.affectedCrawlers = ['All AI crawlers'];
   }
 
   // Check connection refused
   if (error && error.code === 'ECONNREFUSED') {
     detection.isBlocked = true;
-    detection.blockType = 'Connection Refused';
-    detection.evidence.push('Server actively refused connection');
+    detection.blockingType = 'connection_refused';
+    detection.evidence.detectedSignatures.push('Server actively refused connection');
+    detection.evidence.responseIndicators.push('Connection rejected at network level');
     detection.recommendation = 'Firewall or security software may be blocking automated requests';
-    detection.aeoImpact = 'HIGH: Firewall rules may be blocking AI crawler IPs';
+    detection.impact = 'HIGH: Firewall rules may be blocking AI crawler IPs';
+    detection.affectedCrawlers = ['All AI crawlers'];
   }
 
   // Check for no response (complete silence)
   if (error && error.request && !error.response) {
     detection.isBlocked = true;
-    detection.blockType = 'No Response / Silent Drop';
-    detection.evidence.push('Server did not respond at all (possible IP blocking)');
+    detection.blockingType = 'no_response';
+    detection.evidence.detectedSignatures.push('Server did not respond at all (possible IP blocking)');
+    detection.evidence.responseIndicators.push('Silent connection drop');
     detection.recommendation = 'Check IP allowlists and ensure AI crawler IPs aren\'t blocked';
-    detection.aeoImpact = 'CRITICAL: IP-based blocking is preventing all AI crawler access';
+    detection.impact = 'CRITICAL: IP-based blocking is preventing all AI crawler access';
+    detection.affectedCrawlers = ['All AI crawlers'];
   }
 
   return detection;
 }
+
 
 /**
  * Check robots.txt and respect disallow rules

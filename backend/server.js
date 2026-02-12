@@ -333,7 +333,7 @@ app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (user && !user.isVerified) {
       user.isVerified = true;
-      user.dailyLimit = 10; // Registered users get 10 analyses/day
+      // Don't set dailyLimit - getDailyLimit() handles it dynamically (5 for verified free users)
       await user.save();
     }
     
