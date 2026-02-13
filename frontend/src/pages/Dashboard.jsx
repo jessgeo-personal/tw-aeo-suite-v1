@@ -38,7 +38,8 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   React.useEffect(() => {
     const fetchUserAndUsage = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/session`, {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/api/auth/session`, {
           credentials: 'include'
         });
         if (response.ok) {
@@ -68,7 +69,8 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
       // Force refresh user data to get updated subscription
       const refreshUser = async () => {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/session`, {
+          const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+          const response = await fetch(`${API_URL}/api/auth/session`, {
             credentials: 'include'
           });
           if (response.ok) {
@@ -99,7 +101,8 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   // Logout handler
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -173,8 +176,9 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
       if (!analysisId) {
         throw new Error('Analysis ID not found. Please run a new analysis.');
       }
-        
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/export/pdf`, {
+      
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/export/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
