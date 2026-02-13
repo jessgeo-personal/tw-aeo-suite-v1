@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, Crown, ChevronDown } from 'lucide-react';
+import { User, LogOut, Crown, ChevronDown, CreditCard, Sparkles } from 'lucide-react';
 
-const UserMenu = ({ user, onLogout }) => {
+const UserMenu = ({ user, onLogout, onManageSubscription, onUpgrade }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -19,6 +19,8 @@ const UserMenu = ({ user, onLogout }) => {
   if (!user) return null;
 
   const subscriptionType = user.subscription?.type || 'free';
+  const hasPro = subscriptionType === 'pro' || subscriptionType === 'enterprise';
+  
   const subscriptionBadge = {
     free: { text: 'Free', color: 'bg-dark-600 text-dark-300' },
     pro: { text: 'Pro', color: 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white' },
@@ -26,6 +28,20 @@ const UserMenu = ({ user, onLogout }) => {
   };
 
   const badge = subscriptionBadge[subscriptionType];
+
+  const handleManageClick = () => {
+    setIsOpen(false);
+    if (onManageSubscription) {
+      onManageSubscription();
+    }
+  };
+
+  const handleUpgradeClick = () => {
+    setIsOpen(false);
+    if (onUpgrade) {
+      onUpgrade();
+    }
+  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -69,6 +85,29 @@ const UserMenu = ({ user, onLogout }) => {
               </p>
             )}
           </div>
+
+          {/* Subscription Actions */}
+          {hasPro ? (
+            // Pro/Enterprise users - Show "Manage Subscription"
+            <button
+              onClick={handleManageClick}
+              className="w-full px-4 py-3 text-left text-sm text-dark-100 hover:bg-dark-700 transition-colors flex items-center gap-2 border-b border-dark-700"
+            >
+              <CreditCard size={16} className="text-primary-500" />
+              Manage Subscription
+            </button>
+          ) : (
+            // Free users - Show "Upgrade to Pro"
+            <button
+              onClick={handleUpgradeClick}
+              className="w-full px-4 py-3 text-left text-sm hover:bg-dark-700 transition-colors flex items-center gap-2 border-b border-dark-700"
+            >
+              <Sparkles size={16} className="text-yellow-500" />
+              <span className="bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent font-semibold">
+                Upgrade to Pro
+              </span>
+            </button>
+          )}
 
           {/* Logout */}
           <button

@@ -9,7 +9,6 @@ const AuthModal = ({ isOpen, onClose, onSuccess, prefilledEmail = '' }) => {
     firstName: '',
     lastName: '',
     country: 'United Arab Emirates',
-    phone: '',
   });
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -140,19 +139,6 @@ const AuthModal = ({ isOpen, onClose, onSuccess, prefilledEmail = '' }) => {
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                   className="w-full px-4 py-3 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-dark-300 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
-                  placeholder="+971 xx xxx xxxx"
                 />
               </div>
 

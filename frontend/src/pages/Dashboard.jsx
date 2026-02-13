@@ -11,6 +11,9 @@ import GuideModal from '../components/GuideModal';
 import { getScoreColor, getGradeColor, formatProcessingTime, formatUrl } from '../utils/helpers';
 // At top of Dashboard.jsx (around line 11)
 import BotBlockingAlert from '../components/BotBlockingAlert';
+// At top with other imports
+import SubscriptionPlans from '../components/SubscriptionPlans';
+import BillingManagement from '../components/BillingManagement';
 
 const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   const location = useLocation();
@@ -27,6 +30,9 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [user, setUser] = useState(userProp); // Initialize from prop
   const [usage, setUsage] = useState(result?.usage || null); // Track usage separately
+  // Around line 22, with other state declarations
+  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
+  const [showBillingManagement, setShowBillingManagement] = useState(false);
 
   // Fetch user data and usage on component mount
   React.useEffect(() => {
@@ -49,6 +55,46 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
     };
     fetchUserAndUsage();
   }, []);
+
+  // Handle subscription success/cancel redirect from Stripe
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const subscriptionStatus = params.get('subscription');
+    
+    if (subscriptionStatus === 'success') {
+      // Show success message
+      alert('🎉 Welcome to Pro! Your subscription is now active. Refreshing your account...');
+      
+      // Force refresh user data to get updated subscription
+      const refreshUser = async () => {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/session`, {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+            console.log('User subscription updated:', data.user?.subscription);
+          }
+        } catch (error) {
+          console.error('Failed to refresh user:', error);
+        }
+      };
+      
+      refreshUser();
+      
+      // Redirect to home page after brief delay
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 2000);
+      
+    } else if (subscriptionStatus === 'cancelled') {
+      // User cancelled checkout
+      alert('Checkout cancelled. You can upgrade anytime!');
+      navigate('/', { replace: true });
+    }
+  }, [location.search, navigate]);
+ 
 
   // Logout handler
   const handleLogout = async () => {
@@ -231,7 +277,8 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
             <button
               onClick={() => {
                 setPricingModalTab('subscription');
-                setShowPricingModal(true);
+                //setShowPricingModal(true);
+                setShowSubscriptionPlans(true);
               }}
               className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors text-sm"
             >
@@ -249,7 +296,12 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
               <span className="hidden sm:inline">Documentation</span>
             </button>
             {/* User Menu with Email and Logout */}
-            <UserMenu user={user} onLogout={handleLogout} />
+            <UserMenu 
+              user={user} 
+              onLogout={handleLogout}
+              onManageSubscription={() => setShowBillingManagement(true)}
+              onUpgrade={() => setShowSubscriptionPlans(true)}
+            />
           </div>
         </div>
       </header>
@@ -650,7 +702,8 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
                 <button 
                   onClick={() => {
                     setPricingModalTab('subscription');
-                    setShowPricingModal(true);
+                    //setShowPricingModal(true);
+                    setShowSubscriptionPlans(true);
                   }}
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors font-semibold"
                 >
@@ -894,13 +947,54 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         </div>
       </footer>
 
-      {/* Pricing Modal */}
+      {/* Subscription Plans Modal - Stripe Integration */}
+      {showSubscriptionPlans && (
+        <SubscriptionPlans
+          currentUser={user}
+          onClose={() => setShowSubscriptionPlans(false)}
+        />
+      )}
+
+      {/* Pricing Modal - Keep for Professional Services */}
       <PricingModal
         isOpen={showPricingModal}
         onClose={() => setShowPricingModal(false)}
         initialTab={pricingModalTab}
         user={user}
       />
+      {/* Subscription Plans Modal - Stripe */}
+      {showSubscriptionPlans && (
+        <SubscriptionPlans
+          currentUser={user}
+          onClose={() => setShowSubscriptionPlans(false)}
+        />
+      )}
+
+      {/* Billing Management Modal - Stripe */}
+      {showBillingManagement && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Manage Subscription</h2>
+                <button
+                  onClick={() => setShowBillingManagement(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <BillingManagement
+                currentUser={user}
+                onRefresh={() => {
+                  setShowBillingManagement(false);
+                  setShowSubscriptionPlans(true);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Guide Modal */}
       <GuideModal
         isOpen={showGuideModal}

@@ -42,6 +42,14 @@ const apiService = {
     },
   },
 
+  // User endpoints
+  user: {
+    updateProfile: async (profileData) => {
+      const response = await api.patch('/api/user/profile', profileData);
+      return response.data;
+    },
+  },
+
   // Analysis endpoints
   analysis: {
     runAnalysis: async (url, targetKeywords = [], email) => {
@@ -55,6 +63,32 @@ const apiService = {
 
     getHistory: async () => {
       const response = await api.get('/api/analyses');
+      return response.data;
+    },
+  },
+
+  // Subscription endpoints
+  subscription: {
+    getPlans: async () => {
+      const response = await api.get('/api/subscription/plans');
+      return response.data;
+    },
+
+    getStatus: async () => {
+      const response = await api.get('/api/subscription/status');
+      return response.data;
+    },
+
+    createCheckout: async (priceId, couponCode = null) => {
+      const response = await api.post('/api/subscription/create-checkout', {
+        priceId,
+        couponCode,
+      });
+      return response.data;
+    },
+
+    createPortal: async () => {
+      const response = await api.post('/api/subscription/create-portal');
       return response.data;
     },
   },

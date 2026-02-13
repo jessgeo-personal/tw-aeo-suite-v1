@@ -10,6 +10,9 @@ import GuideModal from '../components/GuideModal';
 import StatsBar from '../components/StatsBar';
 import apiService from '../services/api';
 import { isValidUrl } from '../utils/helpers';
+// At top with other imports
+import SubscriptionPlans from '../components/SubscriptionPlans';
+import BillingManagement from '../components/BillingManagement';
 
 const LandingPage = ({ user, onUserUpdate, onLogout }) => {
   const navigate = useNavigate();
@@ -26,6 +29,9 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
   const [guideModalTab, setGuideModalTab] = useState('business');
   const [showFairUseModal, setShowFairUseModal] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState(null); // Store URL/keywords for post-OTP analysis
+  // At top of component
+  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
+  const [showBillingManagement, setShowBillingManagement] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -245,6 +251,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
               <a href="#benefits" className="text-dark-400 hover:text-white transition-colors text-sm">
                 Benefits
               </a>
+              {/*
               <a 
                 href="#pricing" 
                 onClick={(e) => {
@@ -256,6 +263,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
               >
                 Pricing
               </a>
+              */}
               <a href="#faq" className="text-dark-400 hover:text-white transition-colors text-sm">
                 FAQ
               </a>
@@ -277,7 +285,12 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                   {/*{usage && (
                     <UsageBadge current={usage.current} limit={usage.limit} className="hidden sm:flex" />
                   )} */}
-                  <UserMenu user={user} onLogout={handleLogout} />
+                  <UserMenu 
+                    user={user} 
+                    onLogout={handleLogout}
+                    onManageSubscription={() => setShowBillingManagement(true)}
+                    onUpgrade={() => setShowSubscriptionPlans(true)}
+                  />
                   {/* Only show Upgrade button for Free users */}
                   {user.subscription?.type === 'free' || !user.subscription?.type ? (
                     <button
@@ -328,6 +341,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                 <a href="#benefits" className="text-dark-400 hover:text-white transition-colors">
                   Benefits
                 </a>
+                {/*
                 <a 
                   href="#pricing"
                   onClick={(e) => {
@@ -339,6 +353,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                 >
                   Pricing
                 </a>
+                */}
                 <a href="#faq" className="text-dark-400 hover:text-white transition-colors">
                   FAQ
                 </a>
@@ -744,6 +759,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
               <ul className="space-y-2 text-sm text-dark-400">
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li>
+                  {/*
                   <a 
                     href="#pricing" 
                     onClick={(e) => {
@@ -754,6 +770,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                   >
                     Pricing
                   </a>
+                  */}
                 </li>
                 <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
               </ul>
@@ -856,6 +873,39 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
         onClose={() => setShowPricingModal(false)}
         initialTab={pricingModalTab}
       />
+      {/* Subscription Plans Modal - Stripe */}
+      {showSubscriptionPlans && (
+        <SubscriptionPlans
+          currentUser={user}
+          onClose={() => setShowSubscriptionPlans(false)}
+        />
+      )}
+
+      {/* Billing Management Modal - Stripe */}
+      {showBillingManagement && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Manage Subscription</h2>
+                <button
+                  onClick={() => setShowBillingManagement(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <BillingManagement
+                currentUser={user}
+                onRefresh={() => {
+                  setShowBillingManagement(false);
+                  setShowSubscriptionPlans(true);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       <AuthModal

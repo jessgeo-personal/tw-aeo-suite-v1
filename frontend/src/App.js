@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import apiService from './services/api';
 import HistoryPage from './pages/HistoryPage';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -58,6 +59,7 @@ function App() {
         />
 
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/subscription-success" element={<SubscriptionSuccess />} />
       </Routes>
     </Router>
   );
