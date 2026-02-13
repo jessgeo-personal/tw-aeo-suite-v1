@@ -15,6 +15,9 @@ const {
 } = require('./middleware/auth');
 const { sendOTPEmail } = require('./services/emailService');
 const statsRouter = require('./routes/stats');
+const subscriptionRouter = require('./routes/subscription');
+const webhooksRouter = require('./routes/webhooks');
+const userRouter = require('./routes/user');
 
 // Initialize Express app
 const app = express();
@@ -49,7 +52,13 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Body parser
+// ============================================================================
+// CRITICAL: Stripe webhook MUST be registered BEFORE express.json()
+// Webhooks need raw body for signature verification
+// ============================================================================
+app.use(`${API_PREFIX}/webhooks`, webhooksRouter);
+
+// Body parser (after webhook route)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -87,6 +96,12 @@ app.use((req, res, next) => {
 
 // Stats route (using router)
 app.use(`${API_PREFIX}/stats`, statsRouter);
+
+// User routes
+app.use(`${API_PREFIX}/user`, userRouter);
+
+// Subscription routes
+app.use(`${API_PREFIX}/subscription`, subscriptionRouter);
 
 // Health check endpoint
 app.get(`${API_PREFIX}/health`, (req, res) => {
@@ -335,6 +350,23 @@ app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
       user.isVerified = true;
       // Don't set dailyLimit - getDailyLimit() handles it dynamically (5 for verified free users)
       await user.save();
+
+      // SYNC WITH HUBSPOT on first verification
+      try {
+        const { createOrUpdateContact } = require('./utils/hubspot');
+        await createOrUpdateContact({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          company: user.company,
+          phone: user.phone,
+          country: user.country,
+          leadInterest: 'Verified User'
+        });
+        console.log('✅ HubSpot contact synced for verified user');
+      } catch (hubspotError) {
+        console.error('⚠️ HubSpot sync error (non-fatal):', hubspotError.message);
+      }
     }
     
     // Set session
