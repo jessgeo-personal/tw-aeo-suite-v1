@@ -18,6 +18,7 @@ const statsRouter = require('./routes/stats');
 const subscriptionRouter = require('./routes/subscription');
 const webhooksRouter = require('./routes/webhooks');
 const userRouter = require('./routes/user');
+const { errorHandler } = require('./utils/errorLogger'); 
 
 // Initialize Express app
 const app = express();
@@ -840,14 +841,15 @@ app.get(`${API_PREFIX}/test/user-info`, extractUser, async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
+//app.use((err, req, res, next) => {
+//  console.error('Global error handler:', err);
+//  res.status(500).json({
+//    success: false,
+//    message: 'Internal server error',
+//    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+//  });
+//});
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 3001;
