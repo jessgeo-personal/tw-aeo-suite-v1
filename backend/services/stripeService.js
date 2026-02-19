@@ -364,9 +364,13 @@ async function handleWebhookEvent(event, User) {
 
         const user = await User.findOne({ 'subscription.stripeCustomerId': customerId });
         if (user) {
-          // Update subscription dates
-          user.subscription.startDate = new Date(subscription.current_period_start * 1000);
-          user.subscription.endDate = new Date(subscription.current_period_end * 1000);
+          // Only update dates if they're valid
+          if (subscription.current_period_start) {
+            user.subscription.startDate = new Date(subscription.current_period_start * 1000);
+          }
+          if (subscription.current_period_end) {
+            user.subscription.endDate = new Date(subscription.current_period_end * 1000);
+          }
           
           // Handle cancellation
           if (subscription.cancel_at_period_end) {
