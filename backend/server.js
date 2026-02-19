@@ -248,6 +248,26 @@ app.post(`${API_PREFIX}/analyze`,
     } catch (error) {
       console.error('Analysis endpoint error:', error);
       
+      // LOG ERROR TO DATABASE
+      const { logError } = require('./utils/errorLogger');
+      await logError({
+        errorType: 'analysis_error',
+        severity: 'high',
+        message: error.message,
+        stack: error.stack,
+        userId: req.user?._id,
+        context: {
+          endpoint: '/api/analyze',
+          method: 'POST',
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          requestBody: {
+            url: req.body.url,
+            email: req.body.email
+          }
+        }
+      });
+      
       // Pass through blocking detection if available
       const errorResponse = {
         success: false,
@@ -317,13 +337,31 @@ app.post(`${API_PREFIX}/auth/request-otp`, apiLimiter, async (req, res) => {
       email: email.toLowerCase().trim()
     });
     
-  } catch (error) {
-    console.error('Request OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send OTP. Please try again.'
-    });
-  }
+    } catch (error) {
+      console.error('Request OTP error:', error);
+      
+      // LOG ERROR TO DATABASE
+      const { logError } = require('./utils/errorLogger');
+      await logError({
+        errorType: 'auth_error',
+        severity: 'high',
+        message: error.message,
+        stack: error.stack,
+        userId: null,
+        context: {
+          endpoint: '/api/auth/request-otp',
+          method: 'POST',
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          requestBody: { email: req.body.email }
+        }
+      });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP. Please try again.'
+      });
+    }
 });
 
 // Verify OTP endpoint
@@ -392,13 +430,31 @@ app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
       }
     });
     
-  } catch (error) {
-    console.error('Verify OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to verify OTP. Please try again.'
-    });
-  }
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      
+      // LOG ERROR TO DATABASE
+      const { logError } = require('./utils/errorLogger');
+      await logError({
+        errorType: 'auth_error',
+        severity: 'high',
+        message: error.message,
+        stack: error.stack,
+        userId: null,
+        context: {
+          endpoint: '/api/auth/verify-otp',
+          method: 'POST',
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          requestBody: { email: req.body.email }
+        }
+      });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to verify OTP. Please try again.'
+      });
+    }
 });
 
 // Get session endpoint
@@ -514,6 +570,24 @@ app.post(`${API_PREFIX}/leads/submit`, apiLimiter, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Lead submission error:', error);
+    
+    // LOG ERROR TO DATABASE
+    const { logError } = require('./utils/errorLogger');
+    await logError({
+      errorType: 'api_error',
+      severity: 'medium',
+      message: error.message,
+      stack: error.stack,
+      userId: null,
+      context: {
+        endpoint: '/api/leads/submit',
+        method: 'POST',
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        requestBody: { email: req.body.email, service: req.body.service }
+      }
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Failed to submit lead form. Please try again.'
@@ -599,9 +673,27 @@ app.post(`${API_PREFIX}/export/pdf`, extractUser, async (req, res) => {
         }
       }
     });
-    
+      
   } catch (error) {
     console.error('PDF generation error:', error);
+    
+    // LOG ERROR TO DATABASE
+    const { logError } = require('./utils/errorLogger');
+    await logError({
+      errorType: 'api_error',
+      severity: 'medium',
+      message: error.message,
+      stack: error.stack,
+      userId: req.user?._id,
+      context: {
+        endpoint: '/api/export/pdf',
+        method: 'POST',
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        requestBody: { analysisId: req.body.analysisId, type: req.body.type }
+      }
+    });
+    
     return res.status(500).json({ 
       success: false, 
       message: 'Error generating PDF',
@@ -667,10 +759,28 @@ app.get(`${API_PREFIX}/analyses/history`, extractUser, async (req, res) => {
       trendHistory
     });
     
-  } catch (error) {
-    console.error('History fetch error:', error);
-    return res.status(500).json({ success: false, message: 'Error fetching history' });
-  }
+    } catch (error) {
+      console.error('History fetch error:', error);
+      
+      // LOG ERROR TO DATABASE
+      const { logError } = require('./utils/errorLogger');
+      await logError({
+        errorType: 'api_error',
+        severity: 'medium',
+        message: error.message,
+        stack: error.stack,
+        userId: req.user?._id,
+        context: {
+          endpoint: '/api/analyses/history',
+          method: 'GET',
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          requestBody: { url: req.query.url, days: req.query.days }
+        }
+      });
+      
+      return res.status(500).json({ success: false, message: 'Error fetching history' });
+    }
 });
 
 app.get(`${API_PREFIX}/analyses/history/export`, extractUser, async (req, res) => {
