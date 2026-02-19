@@ -393,16 +393,24 @@ app.post(`${API_PREFIX}/auth/verify-otp`, apiLimiter, async (req, res) => {
       // SYNC WITH HUBSPOT on first verification
       try {
         const { createOrUpdateContact } = require('./utils/hubspot');
-        await createOrUpdateContact({
+        const result = await createOrUpdateContact({
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           company: user.company,
           phone: user.phone,
           country: user.country,
-          leadInterest: 'Verified User'
+          leadInterest: 'AEO Tools Test'
         });
-        console.log('✅ HubSpot contact synced for verified user');
+        
+        // Save HubSpot contact ID
+        if (result.success && result.contactId) {
+          user.hubspotContactId = result.contactId;
+          await user.save();
+          console.log('✅ HubSpot contact synced, ID:', result.contactId);
+        } else {
+          console.error('⚠️ HubSpot sync failed:', result.message);
+        }
       } catch (hubspotError) {
         console.error('⚠️ HubSpot sync error (non-fatal):', hubspotError.message);
       }
