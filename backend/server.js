@@ -145,8 +145,11 @@ app.post(`${API_PREFIX}/analyze`,
       
       console.log(`Starting analysis for ${url} by ${userEmail}`);
       
+      // Determine premium status for analyzer restrictions
+      const isPremium = req.user ? req.user.hasActiveSubscription() : false;
+
       // Run complete analysis
-      const result = await runCompleteAnalysis(url, targetKeywords);
+      const result = await runCompleteAnalysis(url, targetKeywords, { isPremium });
       
       if (!result.success) {
         // Analysis failed - pass through detailed error info including blocking detection

@@ -1,0 +1,24 @@
+{
+  "defaultMode": "plan",
+  "toolAccess": {
+    "preventExecution": ["rm -rf *", "rm -rf /", "drop database"],
+    "requireApproval": ["npm install", "git push", "npm audit fix"]
+  },
+  "mcpServers": {
+    "mongodb-local": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-mongodb", "mongodb://localhost:27017/aeo-dev"]
+    },
+    "mongodb-staging": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-mongodb", "mongodb+srv://jessthatworkx_db_user:m6RpXwNfT5DfJXQn@aeo-tool-cluster.rrgmg0q.mongodb.net/aeo-staging?appName=AEO-Tool-Cluster&tls=true"],
+      "env": { 
+        "MONGODB_READ_ONLY": "true" 
+      }
+    }
+  },
+  "envParity": {
+    "requiredFiles": [".env.example", ".env.dev", ".env.staging"],
+    "strictMode": true
+  }
+}

@@ -51,8 +51,18 @@ function detectBotBlocking(error, response = null) {
   if (response && response.data && typeof response.data === 'string') {
     const html = response.data.toLowerCase();
     
-    // Cloudflare challenge detection
-    if (html.includes('cloudflare') && (html.includes('challenge') || html.includes('checking your browser'))) {
+    // Cloudflare challenge detection - must match specific challenge page patterns
+    const isCloudflarePage = html.includes('cloudflare');
+    const isActualChallenge = (
+      html.includes('checking your browser') ||
+      html.includes('please wait') && html.includes('ddos-guard') ||
+      html.includes('cf-challenge') ||
+      html.includes('cf_chl_') ||
+      html.includes('jschl-answer') ||
+      html.includes('challenge-form') ||
+      (html.includes('challenge') && html.includes('ray id') && html.length < 15000)
+    );
+    if (isCloudflarePage && isActualChallenge) {
       detection.isBlocked = true;
       detection.blockingType = 'cloudflare_challenge';
       detection.evidence.detectedSignatures.push('Cloudflare bot challenge page detected');
@@ -141,8 +151,10 @@ IMPORTANT: These changes typically take effect within 2-3 minutes.`;
       ];
     }
     
-    // Generic "Access Denied" patterns
-    if (html.includes('access denied') || html.includes('blocked') || html.includes('forbidden')) {
+    // Generic "Access Denied" patterns - require stronger signals to avoid false positives
+    const hasAccessDeniedTitle = html.includes('<title>access denied') || html.includes('<title>403') || html.includes('<title>forbidden');
+    const hasAccessDeniedBody = (html.includes('access denied') || html.includes('403 forbidden')) && html.length < 10000;
+    if (hasAccessDeniedTitle || hasAccessDeniedBody) {
       detection.isBlocked = true;
       detection.blockingType = 'access_denied';
       detection.evidence.detectedSignatures.push('Generic access denied message detected in page content');
@@ -189,6 +201,137 @@ IMPORTANT: These changes typically take effect within 2-3 minutes.`;
   return detection;
 }
 
+/**
+ * Probe a URL with a specific User-Agent and return status + block detection
+ * @param {string} url
+ * @param {string} userAgent
+ * @param {string} label - human label for this probe
+ * @returns {object}
+ */
+async function probeWithUA(url, userAgent, label) {
+  const result = {
+    label,
+    userAgent,
+    status: null,
+    blocked: false,
+    blockType: null,
+    evidence: [],
+    contentLength: null,
+    error: null
+  };
+
+  try {
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': userAgent,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive'
+      },
+      maxRedirects: 5,
+      validateStatus: () => true // accept all status codes
+    });
+
+    result.status = response.status;
+    result.contentLength = response.data ? response.data.length : 0;
+
+    // Detect blocking from response
+    const detection = detectBotBlocking(null, response);
+    if (detection.isBlocked) {
+      result.blocked = true;
+      result.blockType = detection.blockingType;
+      result.evidence = detection.evidence.detectedSignatures;
+    } else if (response.status === 403 || response.status === 429 || response.status === 503) {
+      result.blocked = true;
+      result.blockType = `http_${response.status}`;
+      result.evidence = [`HTTP ${response.status} returned for ${label}`];
+    }
+
+  } catch (err) {
+    result.error = err.message;
+    result.blocked = true;
+    result.blockType = err.code || 'request_failed';
+    result.evidence = [err.message];
+  }
+
+  return result;
+}
+
+/**
+ * Run multi-UA probe: tests AIOptimizeBot, GPTBot, and Browser UA
+ * Returns structured comparison of how site responds to each
+ * @param {string} url
+ * @returns {object} multiUAProbeResult
+ */
+async function runMultiUAProbe(url) {
+  const UAS = [
+    {
+      label: 'AIOptimizeBot',
+      ua: 'Mozilla/5.0 (compatible; AIOptimizeBot/1.0; +https://aeo.thatworkx.com/aeo-bot.html)'
+    },
+    {
+      label: 'GPTBot',
+      ua: 'GPTBot/1.0 (+https://openai.com/gptbot)'
+    },
+    {
+      label: 'Browser',
+      ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+  ];
+
+  console.log(`🔍 Running multi-UA probe for: ${url}`);
+
+  // Run all 3 probes in parallel
+  const [aeoBot, gptBot, browser] = await Promise.all([
+    probeWithUA(url, UAS[0].ua, UAS[0].label),
+    probeWithUA(url, UAS[1].ua, UAS[1].label),
+    probeWithUA(url, UAS[2].ua, UAS[2].label)
+  ]);
+
+  // Determine 3-state blocking status
+  const aiCrawlersBlocked = gptBot.blocked;
+  const aeoBotBlocked = aeoBot.blocked;
+  const siteAccessible = !browser.blocked;
+
+  let blockingStatus = 'none'; // green
+  let blockingStatusLabel = '✅ All Bots Allowed';
+  let blockingSeverity = 'none';
+
+  if (!siteAccessible) {
+    blockingStatus = 'site_down';
+    blockingStatusLabel = '🔴 Site Inaccessible';
+    blockingSeverity = 'critical';
+  } else if (aiCrawlersBlocked && aeoBotBlocked) {
+    blockingStatus = 'all_bots_blocked';
+    blockingStatusLabel = '🔴 AI Crawlers Blocked';
+    blockingSeverity = 'critical';
+  } else if (aiCrawlersBlocked && !aeoBotBlocked) {
+    blockingStatus = 'ai_crawlers_blocked';
+    blockingStatusLabel = '🔴 AI Crawlers Blocked';
+    blockingSeverity = 'critical';
+  } else if (!aiCrawlersBlocked && aeoBotBlocked) {
+    blockingStatus = 'aeo_bot_only_blocked';
+    blockingStatusLabel = '🟡 AIOptimizeBot Blocked (AI crawlers may be OK)';
+    blockingSeverity = 'medium';
+  }
+
+  const result = {
+    probes: { aeoBot, gptBot, browser },
+    blockingStatus,
+    blockingStatusLabel,
+    blockingSeverity,
+    aiCrawlersBlocked,
+    aeoBotBlocked,
+    siteAccessible
+  };
+
+  console.log(`   Multi-UA result: ${blockingStatusLabel}`);
+  console.log(`   GPTBot blocked: ${aiCrawlersBlocked} | AIOptimizeBot blocked: ${aeoBotBlocked} | Site accessible: ${siteAccessible}`);
+
+  return result;
+}
 
 /**
  * Check robots.txt and respect disallow rules
@@ -315,7 +458,15 @@ async function fetchPage(url, options = {}) {
     
     // Parse HTML with Cheerio
     const $ = cheerio.load(response.data);
-    
+
+    // Run multi-UA probe (non-blocking, parallel to main fetch)
+    let multiUAProbeResult = null;
+    try {
+      multiUAProbeResult = await runMultiUAProbe(url);
+    } catch (probeErr) {
+      console.error('Multi-UA probe failed (non-fatal):', probeErr.message);
+    }
+
     return {
       $,
       html: response.data,
@@ -323,7 +474,8 @@ async function fetchPage(url, options = {}) {
       headers: response.headers,
       url: response.config.url, // Final URL after redirects
       redirected: response.request._redirectable._redirectCount > 0,
-      blockDetection: null // No blocking detected
+      blockDetection: null, // No blocking detected
+      multiUAProbeResult
     };
     
   } catch (error) {
@@ -417,5 +569,6 @@ module.exports = {
   fetchPage,
   isAccessible,
   getRobotsTxt,
-  detectBotBlocking
+  detectBotBlocking,
+  runMultiUAProbe
 };

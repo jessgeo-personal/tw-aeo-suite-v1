@@ -30,6 +30,11 @@ const usageSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  analyzerCounts: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
   analyses: [{
     analysisId: {
       type: mongoose.Schema.Types.ObjectId,

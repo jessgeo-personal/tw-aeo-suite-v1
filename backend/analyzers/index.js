@@ -43,9 +43,46 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
         evidence: blockDetection.evidence,
         blockType: blockDetection.blockType
       };
-      
+
       console.log(`🚨 Bot blocking detected: ${blockDetection.blockType}`);
       console.log(`   Evidence: ${blockDetection.evidence.join(', ')}`);
+    }
+
+    // Multi-UA probe results — enrich blockingWarning with 3-state status
+    const multiUAProbeResult = fetchResult.multiUAProbeResult || null;
+    if (multiUAProbeResult) {
+      console.log(`🔍 Multi-UA Probe: ${multiUAProbeResult.blockingStatusLabel}`);
+
+      // If multi-UA probe found blocking but single fetch did not, create warning
+      if (!blockingWarning && multiUAProbeResult.blockingSeverity !== 'none') {
+        blockingWarning = {
+          text: `⚠️ AEO ISSUE: ${multiUAProbeResult.blockingStatusLabel}`,
+          why: multiUAProbeResult.aiCrawlersBlocked
+            ? 'AI search engines (ChatGPT, Claude, Perplexity) are being blocked from accessing your content. You will not appear in AI-generated answers.'
+            : 'AIOptimizeBot is being blocked. AI crawlers may still access your site but analysis accuracy is reduced.',
+          howToFix: multiUAProbeResult.aiCrawlersBlocked
+            ? 'Allow GPTBot, ClaudeBot, and PerplexityBot in your WAF/Cloudflare settings. See the bot management guide.'
+            : 'Add AIOptimizeBot to your allowlist in Cloudflare or your WAF. User-agent: AIOptimizeBot',
+          priority: multiUAProbeResult.blockingSeverity === 'critical' ? 'critical' : 'medium',
+          analyzer: 'Site Accessibility',
+          evidence: [
+            `GPTBot probe: ${multiUAProbeResult.probes.gptBot.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.gptBot.status})`,
+            `AIOptimizeBot probe: ${multiUAProbeResult.probes.aeoBot.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.aeoBot.status})`,
+            `Browser probe: ${multiUAProbeResult.probes.browser.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.browser.status})`
+          ],
+          blockType: multiUAProbeResult.blockingStatus,
+          multiUAProbeResult // attach full detail for frontend
+        };
+      } else if (blockingWarning) {
+        // Enrich existing warning with multi-UA detail
+        blockingWarning.multiUAProbeResult = multiUAProbeResult;
+        blockingWarning.evidence = blockingWarning.evidence || {};
+        blockingWarning.multiUAEvidence = [
+          `GPTBot probe: ${multiUAProbeResult.probes.gptBot.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.gptBot.status})`,
+          `AIOptimizeBot probe: ${multiUAProbeResult.probes.aeoBot.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.aeoBot.status})`,
+          `Browser probe: ${multiUAProbeResult.probes.browser.blocked ? 'BLOCKED' : 'OK'} (HTTP ${multiUAProbeResult.probes.browser.status})`
+        ];
+      }
     }
     
     // Extract domain for site-level analysis
@@ -69,15 +106,22 @@ async function runCompleteAnalysis(url, targetKeywords = []) {
     ]);
 
     // Run site-level E-E-A-T (Pro/Enterprise feature)
-    // Note: This will always run but only be shown to Pro/Enterprise users in frontend
     let siteLevelEEAT = null;
-    try {
-      console.log('Running site-level E-E-A-T analysis...');
-      siteLevelEEAT = await analyzeSiteLevelEEAT(domain);
-    } catch (error) {
-      console.error('Site-level E-E-A-T analysis failed:', error);
-      // Don't fail entire analysis if site-level fails
-      siteLevelEEAT = null;
+    if (isPremium) {
+      try {
+        console.log('Running site-level E-E-A-T analysis...');
+        siteLevelEEAT = await analyzeSiteLevelEEAT(domain);
+      } catch (error) {
+        console.error('Site-level E-E-A-T analysis failed:', error);
+        // Don't fail entire analysis if site-level fails
+        siteLevelEEAT = null;
+      }
+    } else {
+      console.log('Skipping site-level E-E-A-T (Premium feature)');
+      siteLevelEEAT = {
+        status: 'skipped',
+        message: 'Site-level EEAT is only available for Pro and Enterprise subscribers.'
+      };
     }
     
     // Calculate weighted overall score

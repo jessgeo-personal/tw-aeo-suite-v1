@@ -317,7 +317,16 @@ async function handleWebhookEvent(event, User) {
         user.subscription.startDate = startDate;
         user.subscription.endDate = endDate;
         
-        console.log('Saving user with updated subscription...');
+        // PHASE 2: Snapshot global analyzer limits for grandfathering
+        user.subscription.analyzerLimits = {
+          technical: parseInt(process.env.DAILY_LIMIT_TECHNICAL) || 100,
+          content: parseInt(process.env.DAILY_LIMIT_CONTENT) || 100,
+          queryMatch: parseInt(process.env.DAILY_LIMIT_QUERY_MATCH) || 100,
+          visibility: parseInt(process.env.DAILY_LIMIT_VISIBILITY) || 100,
+          siteEEAT: parseInt(process.env.DAILY_LIMIT_SITE_EEAT) || 20
+        };
+        
+        console.log('Saving user with updated subscription and grandfathered limits...');
         await user.save();
 
         console.log(`✅ Subscription activated for user ${user.email}`);
