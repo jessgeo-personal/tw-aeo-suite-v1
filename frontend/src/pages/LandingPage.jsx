@@ -10,6 +10,7 @@ import GuideModal from '../components/GuideModal';
 import StatsBar from '../components/StatsBar';
 import apiService from '../services/api';
 import { isValidUrl } from '../utils/helpers';
+import VersionFooter from '../components/VersionFooter';
 // At top with other imports
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import BillingManagement from '../components/BillingManagement';
@@ -251,19 +252,6 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
               <a href="#benefits" className="text-dark-400 hover:text-white transition-colors text-sm">
                 Benefits
               </a>
-              {/*
-              <a 
-                href="#pricing" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPricingModalTab('subscription');
-                  setShowPricingModal(true);
-                }}
-                className="text-dark-400 hover:text-white transition-colors text-sm cursor-pointer"
-              >
-                Pricing
-              </a>
-              */}
               <a href="#faq" className="text-dark-400 hover:text-white transition-colors text-sm">
                 FAQ
               </a>
@@ -282,9 +270,6 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
             <div className="flex items-center gap-4">
               {user ? (
                 <>
-                  {/*{usage && (
-                    <UsageBadge current={usage.current} limit={usage.limit} className="hidden sm:flex" />
-                  )} */}
                   <UserMenu 
                     user={user} 
                     onLogout={handleLogout}
@@ -341,19 +326,6 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                 <a href="#benefits" className="text-dark-400 hover:text-white transition-colors">
                   Benefits
                 </a>
-                {/*
-                <a 
-                  href="#pricing"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowPricingModal(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-dark-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  Pricing
-                </a>
-                */}
                 <a href="#faq" className="text-dark-400 hover:text-white transition-colors">
                   FAQ
                 </a>
@@ -734,138 +706,10 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-dark-800 mt-20 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            {/* Company */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-6 h-6 text-primary-500" />
-                <h3 className="text-white font-bold">AEO Suite <i>by Thatworkx</i></h3>
-              </div>
-              <p className="text-dark-400 text-sm mb-4">
-                Professional Answer Engine Optimization tools and consulting services.
-              </p>
-              <p className="text-dark-500 text-xs">
-                By Thatworkx Solutions<br />
-                Dubai, UAE
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li>
-                  {/*
-                  <a 
-                    href="#pricing" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer"
-                  >
-                    Pricing
-                  </a>
-                  */}
-                </li>
-                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
-              </ul>
-            </div>
-
-            {/* Services */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Services</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li>
-                  <a 
-                    href="#services"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer"
-                  >
-                    Technical Audit
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="#services"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer"
-                  >
-                    Content Optimization
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="#services"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer"
-                  >
-                    Full Implementation
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="#services"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer"
-                  >
-                    Monthly Retainer
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li>
-                  <a href="mailto:support@thatworkx.com" className="hover:text-white transition-colors">
-                    support@thatworkx.com
-                  </a>
-                </li>
-                <li>
-                  <a href="https://thatworkx.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    thatworkx.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-dark-800 pt-8 text-center text-sm text-dark-500">
-            <div className="flex items-center justify-center gap-4 mb-2">
-              <button
-                onClick={() => setShowFairUseModal(true)}
-                className="hover:text-white transition-colors"
-              >
-                Fair Use Policy
-              </button>
-              <span>•</span>
-              <a href="mailto:support@thatworkx.com" className="hover:text-white transition-colors">
-                Contact
-              </a>
-            </div>
-            <p>© 2026 Thatworkx Solutions. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <VersionFooter 
+        showFairUseModal={showFairUseModal} 
+        setShowFairUseModal={setShowFairUseModal} 
+      />
 
       {/* Pricing Modal */}
       <PricingModal

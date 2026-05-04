@@ -1,9 +1,19 @@
 const mongoose = require('mongoose');
 const User = require('./User');
 
-describe('User Model Core Integrity', () => {
+/**
+ * AEO SUITE - USER MODEL INTEGRITY TEST SUITE
+ * 
+ * This suite verifies the core business logic and data integrity rules 
+ * implemented during the May 2026 architectural audit.
+ * 
+ * Documentation Style: Red-Green
+ * - [RED]: Describes the original bug or missing logic.
+ * - [GREEN]: Describes the implemented fix and expected behavior.
+ */
+
+describe('User Model: Subscription & Limit Logic', () => {
   beforeAll(async () => {
-    // Connect to a local test database
     const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/aeo_test';
     await mongoose.connect(url);
   });
@@ -17,101 +27,126 @@ describe('User Model Core Integrity', () => {
     await User.deleteMany({});
   });
 
-  describe('Enterprise Subscription Validation (Test 1.1)', () => {
-    it('should fallback to verified limit (5) if enterprise subscription is expired', async () => {
-      const expiredEnterpriseUser = new User({
-        email: 'expired@enterprise.com',
+  describe('FEATURE: Enterprise Tier Enforcement', () => {
+    // [RED]: Original logic granted 999 audits to 'enterprise' users even if expired.
+    // [GREEN]: Now strictly checks hasActiveSubscription() before granting high limits.
+    test('User with EXPIRED Enterprise status must fallback to standard verified limit (5)', async () => {
+      const user = new User({
+        email: 'expired-ent@test.com',
         country: 'United Arab Emirates',
         isVerified: true,
         subscription: {
           type: 'enterprise',
           status: 'expired',
-          endDate: new Date(Date.now() - 86400000) // Yesterday
+          endDate: new Date(Date.now() - 86400000) // 1 day ago
         }
       });
       
-      // CURRENT BEHAVIOR (BUG): Returns 999
-      // EXPECTED BEHAVIOR: Returns 5
-      expect(expiredEnterpriseUser.getDailyLimit()).toBe(5);
+      expect(user.getDailyLimit()).toBe(5);
     });
 
-    it('should grant 999 audits if enterprise subscription is active', async () => {
-      const activeEnterpriseUser = new User({
-        email: 'active@enterprise.com',
+    test('User with ACTIVE Enterprise status should receive 999 audits (or custom limit)', async () => {
+      const user = new User({
+        email: 'active-ent@test.com',
         country: 'United Arab Emirates',
-        isVerified: true,
         subscription: {
           type: 'enterprise',
           status: 'active',
-          endDate: new Date(Date.now() + 86400000) // Tomorrow
+          endDate: new Date(Date.now() + 86400000) // 1 day future
         }
       });
       
-      expect(activeEnterpriseUser.getDailyLimit()).toBe(999);
+      expect(user.getDailyLimit()).toBe(999);
     });
   });
 
-  describe('Subscription Grace Period (Test 1.2)', () => {
-    it('should recognize a cancelled subscription with a future end date as active', async () => {
-      const cancelledUserWithGrace = new User({
-        email: 'grace@pro.com',
-        country: 'United Arab Emirates',
-        subscription: {
-          type: 'pro',
-          status: 'cancelled',
-          endDate: new Date(Date.now() + 86400000 * 5) // 5 days from now
-        }
-      });
-
-      // CURRENT BEHAVIOR: returns false (only checks 'active' status)
-      // EXPECTED BEHAVIOR: returns true (honors grace period)
-      expect(cancelledUserWithGrace.hasActiveSubscription()).toBe(true);
-    });
-
-    it('should recognize a cancelled subscription with a past end date as inactive', async () => {
-      const expiredCancelledUser = new User({
-        email: 'expired-grace@pro.com',
-        country: 'United Arab Emirates',
-        subscription: {
-          type: 'pro',
-          status: 'cancelled',
-          endDate: new Date(Date.now() - 86400000) // Yesterday
-        }
-      });
-
-      expect(expiredCancelledUser.hasActiveSubscription()).toBe(false);
-    });
-  });
-
-  describe('Daily Limit Synchronization (Test 1.3)', () => {
-    it('should automatically sync dailyLimit field to 5 when isVerified is true on save', async () => {
+  describe('FEATURE: Subscription Grace Period (Cancelled Status)', () => {
+    // [RED]: Logic only looked for 'active' status, locking out users who paid but cancelled auto-renewal.
+    // [GREEN]: system now treats 'cancelled' status as active as long as the endDate has not passed.
+    test('User who CANCELLED but still has remaining time should be recognized as having an active subscription', async () => {
       const user = new User({
-        email: 'sync@test.com',
+        email: 'cancelled-grace@test.com',
+        country: 'United Arab Emirates',
+        subscription: {
+          type: 'pro',
+          status: 'cancelled',
+          endDate: new Date(Date.now() + 86400000 * 10) // 10 days left
+        }
+      });
+
+      expect(user.hasActiveSubscription()).toBe(true);
+    });
+
+    test('User who CANCELLED and whose time has EXPIRED should be recognized as inactive', async () => {
+      const user = new User({
+        email: 'cancelled-expired@test.com',
+        country: 'United Arab Emirates',
+        subscription: {
+          type: 'pro',
+          status: 'cancelled',
+          endDate: new Date(Date.now() - 1000) // Just expired
+        }
+      });
+
+      expect(user.hasActiveSubscription()).toBe(false);
+    });
+  });
+
+  describe('FEATURE: Verified User Limits', () => {
+    // [RED]: Static 'dailyLimit' field in DB was hardcoded to 3 and never updated on verification.
+    // [GREEN]: User model now grants 5 audits for verified users and 3 for anonymous/unverified.
+    test('Unverified users should be restricted to the anonymous limit (3)', async () => {
+      const user = new User({
+        email: 'unverified@test.com',
+        country: 'United Arab Emirates',
+        isVerified: false
+      });
+      
+      expect(user.getDailyLimit()).toBe(3);
+    });
+
+    test('Verified users should be granted the registered user limit (5)', async () => {
+      const user = new User({
+        email: 'verified@test.com',
+        country: 'United Arab Emirates',
+        isVerified: true
+      });
+      
+      expect(user.getDailyLimit()).toBe(5);
+    });
+  });
+
+  describe('DATA INTEGRITY: Daily Limit Synchronization', () => {
+    // [RED]: The database field 'dailyLimit' was often out of sync with user tier/status.
+    // [GREEN]: A pre-save hook now forces the static DB field to always match the calculated reality.
+    test('Should automatically update the database dailyLimit field when verification status changes', async () => {
+      const user = new User({
+        email: 'sync-test@test.com',
         country: 'United Arab Emirates',
         isVerified: false
       });
 
       await user.save();
-      expect(user.dailyLimit).toBe(3);
+      expect(user.dailyLimit).toBe(3); // Initial anonymous state
 
       user.isVerified = true;
       await user.save();
 
-      // CURRENT BEHAVIOR: dailyLimit remains 3 in DB
-      // EXPECTED BEHAVIOR: dailyLimit syncs to 5
+      // Verify that the hook correctly synced the field
       expect(user.dailyLimit).toBe(5);
     });
   });
 
-  describe('Grandfathered Analyzer Limits (Test 2.1 & 2.2)', () => {
-    it('should allow snapshotting analyzer limits from environment variables', async () => {
-      // Mock environment variables (in a real scenario, these come from process.env)
-      const mockEnvLimits = {
-        technical: 100,
-        content: 100,
-        queryMatch: 100,
-        visibility: 100,
-        siteEEAT: 20
+  describe('FEATURE: Grandfathered Analyzer Limits', () => {
+    // [RED]: Changing global limits in .env would affect all existing subscribers immediately.
+    // [GREEN]: Webhooks now snapshot the .env limits into a Map on the user document for persistent pricing.
+    test('Should persist a snapshot of analyzer limits on the user document', async () => {
+      const snapshot = {
+        technical: 75,
+        content: 75,
+        queryMatch: 50,
+        visibility: 50,
+        siteEEAT: 10
       };
 
       const user = new User({
@@ -121,20 +156,15 @@ describe('User Model Core Integrity', () => {
           type: 'pro',
           status: 'active',
           endDate: new Date(Date.now() + 86400000),
-          analyzerLimits: mockEnvLimits
+          analyzerLimits: snapshot
         }
       });
 
       await user.save();
       
       const savedUser = await User.findOne({ email: 'grandfather@test.com' });
-      expect(savedUser.subscription.analyzerLimits.get('technical')).toBe(100);
-      expect(savedUser.subscription.analyzerLimits.get('siteEEAT')).toBe(20);
+      expect(savedUser.subscription.analyzerLimits.get('technical')).toBe(75);
+      expect(savedUser.subscription.analyzerLimits.get('siteEEAT')).toBe(10);
     });
   });
-});
-
-describe('Premium Analyzer Restrictions (Test 2.3)', () => {
-  // This test will be implemented once we add the logic to analyzers/index.js
-  // For now, we are focusing on the User model schema and snapshotting
 });

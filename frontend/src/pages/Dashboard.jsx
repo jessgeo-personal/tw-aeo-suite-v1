@@ -9,6 +9,7 @@ import FairUsePolicyModal from '../components/FairUsePolicyModal';
 import StatsBar from '../components/StatsBar';
 import GuideModal from '../components/GuideModal';
 import { getScoreColor, getGradeColor, formatProcessingTime, formatUrl } from '../utils/helpers';
+import VersionFooter from '../components/VersionFooter';
 // At top of Dashboard.jsx (around line 11)
 import BotBlockingAlert from '../components/BotBlockingAlert';
 // At top with other imports
@@ -819,137 +820,10 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         </div>
       </div>
 
-            {/* Footer */}
-      <footer className="border-t border-dark-800 mt-20 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            {/* Company */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-6 h-6 text-primary-500" />
-                <h3 className="text-white font-bold">AEO Suite</h3>
-              </div>
-              <p className="text-dark-400 text-sm mb-4">
-                Professional Answer Engine Optimization tools and consulting services.
-              </p>
-              <p className="text-dark-500 text-xs">
-                By Thatworkx Solutions<br />
-                Dubai, UAE
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li>
-                  <button 
-                    onClick={() => navigate('/')}
-                    className="hover:text-white transition-colors"
-                  >
-                    Home
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      setPricingModalTab('subscription');
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    Pricing
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Services */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Services</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li>
-                  <button 
-                    onClick={() => {
-                      setPricingModalTab('services');
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    Technical Audit
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      setPricingModalTab('services');
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    Content Optimization
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      setPricingModalTab('services');
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    Full Implementation
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      setPricingModalTab('services');
-                      setShowPricingModal(true);
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    Monthly Retainer
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="text-white font-bold mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm text-dark-400">
-                <li>
-                  <a href="mailto:support@thatworkx.com" className="hover:text-white transition-colors">
-                    support@thatworkx.com
-                  </a>
-                </li>
-                <li>
-                  <a href="https://thatworkx.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    thatworkx.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-dark-800 pt-8 text-center text-sm text-dark-500">
-            <div className="flex items-center justify-center gap-4 mb-2">
-              <button
-                onClick={() => setShowFairUseModal(true)}
-                className="hover:text-white transition-colors"
-              >
-                Fair Use Policy
-              </button>
-              <span>•</span>
-              <a href="mailto:support@thatworkx.com" className="hover:text-white transition-colors">
-                Contact
-              </a>
-            </div>
-            <p>© 2026 Thatworkx Solutions. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <VersionFooter 
+        showFairUseModal={showFairUseModal} 
+        setShowFairUseModal={setShowFairUseModal} 
+      />
 
       {/* Subscription Plans Modal - Stripe Integration */}
       {showSubscriptionPlans && (
@@ -966,13 +840,6 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         initialTab={pricingModalTab}
         user={user}
       />
-      {/* Subscription Plans Modal - Stripe */}
-      {showSubscriptionPlans && (
-        <SubscriptionPlans
-          currentUser={user}
-          onClose={() => setShowSubscriptionPlans(false)}
-        />
-      )}
 
       {/* Billing Management Modal - Stripe */}
       {showBillingManagement && (

@@ -1,5 +1,12 @@
 {
   "defaultMode": "plan",
+  "lifecycleHooks": {
+    "onSessionStart": [
+      "Check for root package.json",
+      "Verify Vitest/Jest installation",
+      "Run Environment Parity Audit"
+    ]
+  },
   "toolAccess": {
     "preventExecution": ["rm -rf *", "rm -rf /", "drop database"],
     "requireApproval": ["npm install", "git push", "npm audit fix"]
@@ -7,13 +14,16 @@
   "mcpServers": {
     "mongodb-local": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-mongodb", "mongodb://localhost:27017/aeo-dev"]
+      "args": ["-y", "mongodb-mcp-server@latest", "--readOnly"],
+      "env": { 
+        "MDB_MCP_CONNECTION_STRING": "mongodb://localhost:27017/aeo-dev" 
+      }
     },
     "mongodb-staging": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-mongodb", "mongodb+srv://jessthatworkx_db_user:m6RpXwNfT5DfJXQn@aeo-tool-cluster.rrgmg0q.mongodb.net/aeo-staging?appName=AEO-Tool-Cluster&tls=true"],
+      "args": ["-y", "mongodb-mcp-server@latest", "--readOnly"],
       "env": { 
-        "MONGODB_READ_ONLY": "true" 
+        "MDB_MCP_CONNECTION_STRING": "mongodb+srv://jessthatworkx_db_user:m6RpXwNfT5DfJXQn@aeo-tool-cluster.rrgmg0q.mongodb.net/aeo-staging?appName=AEO-Tool-Cluster&tls=true"
       }
     }
   },

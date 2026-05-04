@@ -1,0 +1,11 @@
+{
+  "name": "aeo-suite-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npm test --prefix backend && npm test --prefix frontend"
+  },
+  "dependencies": {
+    "stripe": "^22.1.0"
+  }
+}

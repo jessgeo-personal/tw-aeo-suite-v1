@@ -12,7 +12,9 @@ const { analyzeSiteLevelEEAT } = require('./siteLevelEEAT');
  * Runs all 5 analyzers and calculates weighted overall score
  * Enhanced with bot/crawler blocking detection
  */
-async function runCompleteAnalysis(url, targetKeywords = []) {
+async function runCompleteAnalysis(url, targetKeywords = [], options = {}) {
+  const { isPremium = false } = options;
+  
   try {
     // Validate URL
     if (!url || typeof url !== 'string') {

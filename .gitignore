@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Agentic Metadata
+.agents/
+.claude/
+skills-lock.json
+
+# Environment Secrets (Crucial for Guardrail #3)
+.env
+.env.*
+!.env.example
