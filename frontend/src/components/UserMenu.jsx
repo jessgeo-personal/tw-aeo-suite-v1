@@ -19,7 +19,8 @@ const UserMenu = ({ user, onLogout, onManageSubscription, onUpgrade }) => {
   if (!user) return null;
 
   const subscriptionType = user.subscription?.type || 'free';
-  const hasPro = subscriptionType === 'pro' || subscriptionType === 'enterprise';
+  const hasActiveSubscription = user.hasActiveSubscription;
+  const hasPro = (subscriptionType === 'pro' || subscriptionType === 'enterprise') && hasActiveSubscription;
   
   const subscriptionBadge = {
     free: { text: 'Free', color: 'bg-dark-600 text-dark-300' },

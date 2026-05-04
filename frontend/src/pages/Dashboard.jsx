@@ -340,7 +340,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
             {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
           </button>
           {/* PDF Export Buttons - Pro Feature */}
-          {user && (user.subscription?.type === 'pro' || user.subscription?.type === 'enterprise') && (
+          {user && (user.subscription?.type === 'pro' || user.subscription?.type === 'enterprise') && user?.hasActiveSubscription && (
             <>
               <button
                 onClick={() => handleExportPDF('summary')}
@@ -475,7 +475,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
             </div>
 
             {/* Trend Indicator - Pro Feature */}
-            {result.trend && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') && (
+            {result.trend && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') && user?.hasActiveSubscription && (
               <div className={`${
                 result.trend.trend === 'up' ? 'bg-green-900/20 border-green-700' :
                 result.trend.trend === 'down' ? 'bg-red-900/20 border-red-700' :
@@ -602,7 +602,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         </div>
 
         {/* Site-Level E-E-A-T - Pro Feature */}
-        {analyzers.siteLevelEEAT && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') ? (
+        {analyzers.siteLevelEEAT && (user?.subscription?.type === 'pro' || user?.subscription?.type === 'enterprise') && user?.hasActiveSubscription ? (
           <div className="mb-8 bg-dark-900 rounded-lg p-6 border border-dark-700">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -697,7 +697,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
               </div>
             )}
           </div>
-        ) : !analyzers.siteLevelEEAT && (user?.subscription?.type === 'free' || !user) ? (
+        ) : !analyzers.siteLevelEEAT && (user?.subscription?.type === 'free' || !user || !user?.hasActiveSubscription) ? (
           <div className="mb-8 bg-gradient-to-r from-sky-900/40 to-purple-900/40 rounded-lg p-6 border border-sky-700">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0 w-12 h-12 bg-sky-600 rounded-full flex items-center justify-center">
