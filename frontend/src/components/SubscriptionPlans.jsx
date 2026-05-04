@@ -11,7 +11,7 @@ const SubscriptionPlans = ({ currentUser, onClose }) => {
 
   // Check if user has active subscription
   const userSubscriptionType = currentUser?.subscription?.type || 'free';
-  const hasActiveSubscription = currentUser?.hasActiveSubscription || currentUser?.subscription?.status === 'active';
+  const hasActiveSubscription = Boolean(currentUser?.hasActiveSubscription);
   const isProOrHigher = (userSubscriptionType === 'pro' || userSubscriptionType === 'enterprise') && hasActiveSubscription;
 
   useEffect(() => {
