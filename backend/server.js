@@ -32,7 +32,7 @@ const app = express();
 // Development: Routes defined WITH /api (direct calls)
 // ============================================================================
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = ['production', 'staging'].includes(process.env.NODE_ENV);
 const API_PREFIX = isProduction ? '' : '/api';
 
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -69,10 +69,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: isProduction ? 'none' : 'lax'
   }
 }));
 
@@ -883,7 +883,7 @@ app.get(`${API_PREFIX}/analyses`, extractUser, async (req, res) => {
 // Toggle subscription tier for testing
 app.post(`${API_PREFIX}/test/toggle-subscription`, extractUser, async (req, res) => {
   try {
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       return res.status(403).json({ success: false, message: 'Testing endpoints disabled in production' });
     }
     
@@ -934,7 +934,7 @@ app.post(`${API_PREFIX}/test/toggle-subscription`, extractUser, async (req, res)
 // Get current user info for testing
 app.get(`${API_PREFIX}/test/user-info`, extractUser, async (req, res) => {
   try {
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       return res.status(403).json({ success: false, message: 'Testing endpoints disabled in production' });
     }
     
