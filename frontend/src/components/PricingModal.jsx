@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Sparkles, Rocket, Mail } from 'lucide-react';
+import { X, Check, Sparkles, Rocket, Mail, Loader2, CreditCard } from 'lucide-react';
 import LeadFormModal from './LeadFormModal';
+import apiService from '../services/api';
 
 const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = null }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+
   const [leadFormConfig, setLeadFormConfig] = useState({
     isOpen: false,
     serviceName: '',
@@ -21,6 +27,50 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = nul
       setActiveTab(initialTab);
     }
   }, [isOpen, initialTab]);
+
+  // Load plans from Stripe when subscription tab is active
+  useEffect(() => {
+    if (isOpen && activeTab === 'subscription' && plans.length === 0) {
+      loadPlans();
+    }
+  }, [isOpen, activeTab]);
+
+  const loadPlans = async () => {
+    setLoadingPlans(true);
+    try {
+      const response = await apiService.subscription.getPlans();
+      if (response.success) {
+        setPlans(response.plans);
+      }
+    } catch (error) {
+      console.error('Failed to load plans:', error);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const handleSubscribe = async (priceId) => {
+    if (!user) {
+      alert('Please sign in to subscribe');
+      return;
+    }
+
+    setCheckingOut(true);
+    setCheckoutError('');
+    
+    try {
+      const response = await apiService.subscription.createCheckout(priceId);
+      if (response.success && response.url) {
+        window.location.assign(response.url);
+      } else {
+        setCheckoutError('Failed to start checkout. Please try again.');
+        setCheckingOut(false);
+      }
+    } catch (error) {
+      setCheckoutError(error.message || 'Failed to start checkout');
+      setCheckingOut(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -43,61 +93,6 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = nul
       isComingSoon: false
     });
   };
-
-  const subscriptionPlans = [
-    {
-      name: 'Free',
-      price: '$0',
-      period: '/month',
-      features: [
-        '10 analyses per day',
-        'All 5 analyzers',
-        'Basic recommendations',
-        'Email support',
-      ],
-      limitations: [
-        'No PDF exports',
-        'No priority support',
-        'No advanced insights',
-      ],
-      cta: 'Current Plan',
-      disabled: true,
-      icon: Sparkles,
-    },
-    {
-      name: 'Pro',
-      price: '$20',
-      period: '/month',
-      popular: true,
-      features: [
-        'Unlimited analyses',
-        'All 5 analyzers',
-        'Advanced recommendations',
-        'PDF report exports',
-        'Priority email support',
-        'Analysis history',
-        'Trend tracking',
-      ],
-      cta: 'Upgrade to Pro',
-      icon: Rocket,
-      leadInterest: 'AEO Pro Plan'
-    },
-    {
-      name: 'Pro Annual',
-      price: '$180',
-      period: '/year',
-      badge: 'Save $60',
-      features: [
-        'Everything in Pro',
-        '2 months free',
-        'Quarterly consultation calls',
-        'Custom recommendations',
-      ],
-      cta: 'Get Annual Plan',
-      icon: Rocket,
-      leadInterest: 'AEO Pro Plan'
-    },
-  ];
 
   const professionalServices = [
     {
@@ -263,83 +258,124 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = nul
               {/* Subscription Plans */}
               {activeTab === 'subscription' && (
                 <>
-                  <div className="grid md:grid-cols-3 gap-6 mb-6">
-                    {subscriptionPlans.map((plan, idx) => {
-                      const Icon = plan.icon;
-                      return (
-                        <div
-                          key={idx}
-                          className={`relative bg-dark-900 border rounded-xl p-6 transition-all ${
-                            plan.popular
-                              ? 'border-primary-500 shadow-lg shadow-primary-500/20'
-                              : 'border-dark-700 hover:border-dark-600'
-                          }`}
-                        >
-                          {plan.popular && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-500 rounded-full text-xs font-bold text-white">
-                              Most Popular
-                            </div>
-                          )}
-                          {plan.badge && (
-                            <div className="absolute -top-3 right-4 px-3 py-1 bg-green-500 rounded-full text-xs font-bold text-white">
-                              {plan.badge}
-                            </div>
-                          )}
-
-                          <div className="text-center mb-6">
-                            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-500/10 rounded-full mb-4">
-                              <Icon className="w-6 h-6 text-primary-500" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">
-                              {plan.name}
-                            </h3>
-                            <div className="flex items-baseline justify-center gap-1">
-                              <span className="text-4xl font-bold text-white">
-                                {plan.price}
-                              </span>
-                              <span className="text-dark-400">{plan.period}</span>
-                            </div>
+                  {loadingPlans ? (
+                    <div className="py-20 flex flex-col items-center justify-center">
+                      <Loader2 className="w-12 h-12 text-primary-500 animate-spin mb-4" />
+                      <p className="text-dark-400">Loading subscription plans...</p>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-3 gap-6 mb-6">
+                      {/* Free Plan - Still Static as it is not a Stripe plan */}
+                      <div className="relative bg-dark-900 border border-dark-700 rounded-xl p-6 transition-all">
+                        <div className="text-center mb-6">
+                          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-500/10 rounded-full mb-4">
+                            <Sparkles className="w-6 h-6 text-primary-500" />
                           </div>
+                          <h3 className="text-xl font-bold text-white mb-2">Free</h3>
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-4xl font-bold text-white">$0</span>
+                            <span className="text-dark-400">/month</span>
+                          </div>
+                        </div>
+                        <ul className="space-y-3 mb-6">
+                          <li className="flex items-start gap-2 text-sm">
+                            <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-dark-300">10 analyses per day</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-sm">
+                            <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-dark-300">All 5 analyzers</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-sm">
+                            <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-dark-300">Basic recommendations</span>
+                          </li>
+                        </ul>
+                        <button
+                          disabled
+                          className="w-full py-3 font-semibold rounded-lg bg-dark-800 text-dark-500 cursor-not-allowed"
+                        >
+                          Current Plan
+                        </button>
+                      </div>
 
-                          <ul className="space-y-3 mb-6">
-                            {plan.features.map((feature, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm">
-                                <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-dark-300">{feature}</span>
-                              </li>
-                            ))}
-                            {plan.limitations && plan.limitations.map((limitation, i) => (
-                              <li key={`limit-${i}`} className="flex items-start gap-2 text-sm">
-                                <X size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-dark-500 line-through">{limitation}</span>
-                              </li>
-                            ))}
-                          </ul>
-
-                          <button
-                            disabled={plan.disabled || (plan.name !== 'Free' && isProOrHigher)}
-                            onClick={() => {
-                              if (plan.disabled || (plan.name !== 'Free' && isProOrHigher)) return;
-                              openLeadForm(plan.name, plan.leadInterest, true);
-                            }}
-                            className={`w-full py-3 font-semibold rounded-lg transition-colors ${
-                              plan.popular
-                                ? 'bg-primary-500 hover:bg-primary-600 text-white disabled:bg-dark-700 disabled:text-dark-500'
-                                : plan.disabled || (plan.name !== 'Free' && isProOrHigher)
-                                ? 'bg-dark-800 text-dark-500 cursor-not-allowed'
-                                : 'bg-dark-800 hover:bg-dark-700 text-white border border-dark-700'
+                      {/* Dynamic Stripe Plans */}
+                      {plans.map((plan) => {
+                        const isAnnual = plan.interval === 'year';
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`relative bg-dark-900 border rounded-xl p-6 transition-all ${
+                              isAnnual
+                                ? 'border-primary-500 shadow-lg shadow-primary-500/20'
+                                : 'border-dark-700 hover:border-dark-600'
                             }`}
                           >
-                            {plan.name === 'Free' 
-                              ? plan.cta 
-                              : isProOrHigher
-                              ? 'Already Subscribed'
-                              : plan.cta}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            {isAnnual && (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-500 rounded-full text-xs font-bold text-white">
+                                Best Value
+                              </div>
+                            )}
+
+                            <div className="text-center mb-6">
+                              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-500/10 rounded-full mb-4">
+                                <Rocket className="w-6 h-6 text-primary-500" />
+                              </div>
+                              <h3 className="text-xl font-bold text-white mb-2">
+                                {plan.name}
+                              </h3>
+                              <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-4xl font-bold text-white">
+                                  ${plan.price}
+                                </span>
+                                <span className="text-dark-400">/{plan.interval}</span>
+                              </div>
+                            </div>
+
+                            <ul className="space-y-3 mb-6">
+                              {plan.features.map((feature, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm">
+                                  <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                  <span className="text-dark-300">{feature}</span>
+                                </li>
+                              ))}
+                            </ul>
+
+                            <button
+                              disabled={checkingOut || isProOrHigher}
+                              onClick={() => handleSubscribe(plan.priceId)}
+                              className={`w-full py-3 font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                                isAnnual
+                                  ? 'bg-primary-500 hover:bg-primary-600 text-white shadow-lg'
+                                  : 'bg-dark-800 hover:bg-dark-700 text-white border border-dark-700'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {checkingOut ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : isProOrHigher ? (
+                                'Already Subscribed'
+                              ) : (
+                                <>
+                                  <CreditCard className="w-4 h-4" />
+                                  Upgrade to Pro
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Checkout Error Message */}
+                  {checkoutError && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-center">
+                      <p className="text-red-400 text-sm">{checkoutError}</p>
+                    </div>
+                  )}
 
                   {/* Enterprise Plan Link */}
                   <div className="text-center py-4 border-t border-dark-700">

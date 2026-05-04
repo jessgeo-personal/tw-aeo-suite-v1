@@ -35,8 +35,8 @@ router.post('/create-checkout', extractUser, async (req, res) => {
     }
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const successUrl = `${frontendUrl}/dashboard?subscription=success`;
-    const cancelUrl = `${frontendUrl}/dashboard?subscription=cancelled`;
+    const successUrl = `${frontendUrl}/?subscription=success`;
+    const cancelUrl = `${frontendUrl}/?subscription=cancelled`;
 
     const session = await stripeService.createCheckoutSession(
       req.user,
@@ -82,7 +82,7 @@ router.post('/create-portal', extractUser, async (req, res) => {
     }
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const returnUrl = `${frontendUrl}/dashboard`;
+    const returnUrl = `${frontendUrl}/`;
 
     const session = await stripeService.createBillingPortalSession(req.user, returnUrl);
 

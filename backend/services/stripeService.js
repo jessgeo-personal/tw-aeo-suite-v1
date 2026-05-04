@@ -1,8 +1,6 @@
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-const successUrl = `${frontendUrl}/subscription-success`; // Changed from /dashboard?subscription=success
-const cancelUrl = `${frontendUrl}/`; // Just go home if cancelled
 
 /**
  * Stripe Service for Subscription Management

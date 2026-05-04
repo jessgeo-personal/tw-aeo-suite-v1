@@ -99,6 +99,17 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
   }, [location.search, navigate]);
  
 
+  // Fallback redirect if no result is found (e.g. on direct page reload)
+  // But allow subscription success/cancel parameters to be processed first
+  useEffect(() => {
+    if (!result && !location.search.includes('subscription=')) {
+      const timer = setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 500); // Small delay to allow potential state hydration
+      return () => clearTimeout(timer);
+    }
+  }, [result, location.search, navigate]);
+
   // Logout handler
   const handleLogout = async () => {
     try {
@@ -117,14 +128,16 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
 
   if (!result) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-950 flex flex-col items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-dark-400 mb-4">No analysis data found</p>
+          <RefreshCw className="w-12 h-12 text-primary-500 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Redirecting...</h2>
+          <p className="text-dark-400 mb-6">No analysis data found. Returning to homepage.</p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+            className="px-6 py-2 bg-dark-800 hover:bg-dark-700 text-white font-medium rounded-lg transition-colors border border-dark-700"
           >
-            Go Back
+            Go Back Now
           </button>
         </div>
       </div>
@@ -280,11 +293,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
               <UsageBadge current={currentUsage.current} limit={currentUsage.limit} />
             )}
             <button
-              onClick={() => {
-                setPricingModalTab('subscription');
-                //setShowPricingModal(true);
-                setShowSubscriptionPlans(true);
-              }}
+              onClick={() => setShowSubscriptionPlans(true)}
               className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors text-sm"
             >
               Upgrade to Pro

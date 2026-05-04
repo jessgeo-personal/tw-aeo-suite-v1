@@ -35,6 +35,15 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
   const [showBillingManagement, setShowBillingManagement] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscription') === 'success') {
+      navigate('/dashboard?subscription=success');
+    } else if (params.get('subscription') === 'cancelled') {
+      navigate('/dashboard?subscription=cancelled');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     if (user) {
       fetchUsage();
     }
@@ -280,8 +289,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
                   {user.subscription?.type === 'free' || !user.subscription?.type ? (
                     <button
                       onClick={() => {
-                        setPricingModalTab('subscription');
-                        setShowPricingModal(true);
+                        setShowSubscriptionPlans(true);
                       }}
                       className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-sm"
                     >
@@ -716,6 +724,7 @@ const LandingPage = ({ user, onUserUpdate, onLogout }) => {
         isOpen={showPricingModal}
         onClose={() => setShowPricingModal(false)}
         initialTab={pricingModalTab}
+        user={user}
       />
       {/* Subscription Plans Modal - Stripe */}
       {showSubscriptionPlans && (
