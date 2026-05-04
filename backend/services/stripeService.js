@@ -20,9 +20,18 @@ async function getOrCreateCustomer(user) {
   try {
     // If user already has Stripe customer ID, retrieve it
     if (user.subscription.stripeCustomerId) {
-      const customer = await stripe.customers.retrieve(user.subscription.stripeCustomerId);
-      if (!customer.deleted) {
-        return customer;
+      try {
+        const customer = await stripe.customers.retrieve(user.subscription.stripeCustomerId);
+        if (!customer.deleted) {
+          return customer;
+        }
+      } catch (retrieveError) {
+        // If the customer doesn't exist in the current Stripe environment (e.g., test mode vs live mode)
+        // or was permanently deleted, we swallow the error and create a new customer below.
+        if (retrieveError.code !== 'resource_missing' && retrieveError.type !== 'StripeInvalidRequestError') {
+          throw retrieveError;
+        }
+        console.warn(`Stripe customer ${user.subscription.stripeCustomerId} not found. Creating a new one.`);
       }
     }
 
