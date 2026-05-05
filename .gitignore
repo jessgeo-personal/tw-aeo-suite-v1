@@ -7,6 +7,7 @@ node_modules/
 .agents/
 .claude/
 skills-lock.json
+CLI-PROMPTS.md
 
 # Environment Secrets (Crucial for Guardrail #3)
 .env
