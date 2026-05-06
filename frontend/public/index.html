@@ -32,20 +32,34 @@
     
     <title>AEO Suite - Answer Engine Optimization</title>
 
-    <!-- AEO Optimization: Global Structured Data -->
+    <!-- AEO Optimization: Global Structured Data Graph -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "AIOptimize by Thatworkx",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "description": "AIOptimize by Thatworkx is an Answer Engine Optimization solution that helps structure your content. Answer Engines like Claude, ChatGPT, Gemini, Perplexity and others LLMs can ingest, process and present the content presented through websites and documents provided they follow certain principles to avoid ambiguity, improve relevance and include logic. AIOptimize helps in structuring your data so Answer engines correctly understand, add to context, decode and cite your content for the most relevant responses. This tool is ideal for content creators, web asset creators, researchers, bloggers, influencers, publicists, advertisers, product managers, marketing leadership, product marketers, marketing agencies, AEO and SEO specialists and anyone who would like to understand how web and mobile assets preform in an Answer Engine environment.",
-      "publisher": {
-        "@type": "Organization",
-        "name": "Thatworkx Solutions L.L.C-FZ",
-        "url": "https://aeo.thatworkx.com"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://aeo.thatworkx.com/#organization",
+          "name": "Thatworkx Solutions L.L.C-FZ",
+          "url": "https://aeo.thatworkx.com",
+          "logo": "https://aeo.thatworkx.com/AEO-thatworkx-logo.svg",
+          "sameAs": [
+            "https://www.linkedin.com/company/thatworkx-solutions"
+          ],
+          "description": "Thatworkx Solutions L.L.C-FZ is a leading developer of Answer Engine Optimization (AEO) tools and content optimization solutions for the AI-first web."
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://aeo.thatworkx.com/#application",
+          "name": "AIOptimize by Thatworkx",
+          "url": "https://aeo.thatworkx.com",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "AIOptimize by Thatworkx is an Answer Engine Optimization solution that helps structure your content. Answer Engines like Claude, ChatGPT, Gemini, Perplexity and others LLMs can ingest, process and present the content presented through websites and documents provided they follow certain principles to avoid ambiguity, improve relevance and include logic. AIOptimize helps in structuring your data so Answer engines correctly understand, add to context, decode and cite your content for the most relevant responses. This tool is ideal for content creators, web asset creators, researchers, bloggers, influencers, publicists, advertisers, product managers, marketing leadership, product marketers, marketing agencies, AEO and SEO specialists and anyone who would like to understand how web and mobile assets preform in an Answer Engine environment.",
+          "publisher": { "@id": "https://aeo.thatworkx.com/#organization" },
+          "author": { "@id": "https://aeo.thatworkx.com/#organization" }
+        }
+      ]
     }
     </script>
   </head>
