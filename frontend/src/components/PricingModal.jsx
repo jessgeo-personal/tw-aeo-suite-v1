@@ -33,7 +33,7 @@ const PricingModal = ({ isOpen, onClose, initialTab = 'subscription', user = nul
     if (isOpen && activeTab === 'subscription' && plans.length === 0) {
       loadPlans();
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, plans.length]);
 
   const loadPlans = async () => {
     setLoadingPlans(true);

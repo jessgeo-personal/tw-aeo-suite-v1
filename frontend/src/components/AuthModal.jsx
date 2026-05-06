@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Mail, Lock, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Mail, Lock, Loader2, ChevronDown, Search } from 'lucide-react';
 import apiService from '../services/api';
+import { countries } from '../utils/countries';
 
 const AuthModal = ({ isOpen, onClose, onSuccess, prefilledEmail = '' }) => {
   const [step, setStep] = useState('email'); // 'email' or 'otp'
@@ -14,7 +15,33 @@ const AuthModal = ({ isOpen, onClose, onSuccess, prefilledEmail = '' }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Searchable Country Dropdown State
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [countrySearchTerm, setCountrySearchTerm] = useState(formData.country);
+  const countryDropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
+        setIsCountryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (!isOpen) return null;
+
+  const handleCountrySelect = (country) => {
+    setFormData({ ...formData, country });
+    setCountrySearchTerm(country);
+    setIsCountryDropdownOpen(false);
+  };
+
+  const filteredCountries = countries.filter(c => 
+    c !== '---' && c.toLowerCase().includes(countrySearchTerm.toLowerCase())
+  );
 
   const handleRequestOTP = async (e) => {
     e.preventDefault();
@@ -129,17 +156,48 @@ const AuthModal = ({ isOpen, onClose, onSuccess, prefilledEmail = '' }) => {
                 </div>
               </div>
 
-              <div>
+              <div className="relative" ref={countryDropdownRef}>
                 <label className="block text-sm font-medium text-dark-300 mb-2">
                   Country *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-4 py-3 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={countrySearchTerm}
+                    onChange={(e) => {
+                      setCountrySearchTerm(e.target.value);
+                      setIsCountryDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsCountryDropdownOpen(true)}
+                    className="w-full px-4 py-3 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors pr-10"
+                    placeholder="Search country..."
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400">
+                    <ChevronDown size={18} className={`transition-transform duration-200 ${isCountryDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {isCountryDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-dark-900 border border-dark-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-600 scrollbar-track-transparent">
+                    {filteredCountries.length > 0 ? (
+                      filteredCountries.map((country, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleCountrySelect(country)}
+                          className="w-full px-4 py-2 text-left text-sm text-dark-100 hover:bg-dark-700 hover:text-white transition-colors border-b border-dark-800 last:border-0"
+                        >
+                          {country}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-dark-500 text-center">
+                        No countries found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button

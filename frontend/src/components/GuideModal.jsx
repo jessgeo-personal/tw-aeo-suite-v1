@@ -100,7 +100,7 @@ export default function GuideModal({ isOpen, onClose, defaultTab = 'business' })
           <ul key={idx} className="list-disc list-inside space-y-1 mb-3 text-gray-700">
             {item.items.map((listItem, listIdx) => (
               <li key={listIdx} className="leading-relaxed">
-                {listItem.replace(/^[•\-]\s*/, '')}
+                {listItem.replace(/^[•-]\s*/, '')}
               </li>
             ))}
           </ul>
