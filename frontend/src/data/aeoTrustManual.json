@@ -1,0 +1,68 @@
+{
+  "version": "2026.05.06.001",
+  "lastUpdated": "2026-05-06",
+  "title": "Answer Engine Trust Manual",
+  "description": "The definitive guide to E-E-A-T and technical trust signals for the AI-first web. Use this data to power infographics, how-to guides, and user education.",
+  "mission": "To provide transparency on how Answer Engines (LLMs) evaluate website credibility and authority.",
+  "corePrinciples": [
+    {
+      "principle": "Stability",
+      "definition": "The longevity and persistence of a domain and its content.",
+      "aeoImpact": "High. LLMs prefer sources that have a proven history of accuracy and aren't 'pop-up' sites."
+    },
+    {
+      "principle": "Identity",
+      "definition": "Explicit, machine-readable declaration of who owns and authors the content.",
+      "aeoImpact": "Critical. Unidentified content is treated as high-risk for hallucination."
+    },
+    {
+      "principle": "Accountability",
+      "definition": "The presence of verifiable contact methods and legal documentation (Privacy/Terms).",
+      "aeoImpact": "High. Proves a human or legal entity is responsible for the information provided."
+    }
+  ],
+  "analyzers": {
+    "siteLevelEEAT": {
+      "title": "Site-Level E-E-A-T",
+      "parameters": [
+        {
+          "id": "domain_age",
+          "name": "Domain Age & Stability",
+          "significance": "Answer Engines use domain age as a proxy for reliability. An established domain (2+ years) is seen as a stable knowledge base for training and citation.",
+          "relevance": "High. Newer domains may face a 'trust sandbox' where their content is scrutinized more heavily for accuracy.",
+          "aeoScoreWeight": "20%",
+          "infographicHint": "Use a timeline icon to show the transition from 'New/Untrusted' to 'Established Authority'."
+        },
+        {
+          "id": "org_schema",
+          "name": "Organization Schema (@graph)",
+          "significance": "The 'Digital Birth Certificate'. It links your brand, logo, and social identities into a single, verifiable machine-readable entity.",
+          "relevance": "Critical. This is the primary way LLMs attribute content to a specific brand. Without it, you are an anonymous source.",
+          "aeoScoreWeight": "10%",
+          "infographicHint": "Use a network graph icon to show the links between Site -> Brand -> Social Profiles."
+        },
+        {
+          "id": "contact_transparency",
+          "name": "Contact & Accountability",
+          "significance": "Visible emails and phone numbers prove that a site is managed by reachable humans. This reduces the risk of the site being flagged as AI-generated spam.",
+          "relevance": "High. AI crawlers check for support@ or info@ addresses to verify site legitimacy.",
+          "aeoScoreWeight": "10%",
+          "infographicHint": "Use a verified badge or envelope icon."
+        },
+        {
+          "id": "trust_pages",
+          "name": "Key Trust Pages",
+          "significance": "About Us, Contact, and Privacy Policy pages provide the context LLMs need to verify Expertise and Experience.",
+          "relevance": "High. Missing these pages is a strong signal of low-quality or temporary sites.",
+          "aeoScoreWeight": "30%",
+          "infographicHint": "Use a document stack icon."
+        }
+      ]
+    }
+  },
+  "answerEngineStandards": {
+    "openai": "Prioritizes 'Source Grounding'—prefers sites with clear entity links in JSON-LD.",
+    "anthropic": "Focuses on 'Helpful, Honest, Harmless'—prioritizes transparent author credentials and privacy documentation.",
+    "perplexity": "Focuses on 'Citable Facts'—highly prioritizes sites that use Organization and FAQ schemas for direct extraction."
+  }
+}

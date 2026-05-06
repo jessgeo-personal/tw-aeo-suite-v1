@@ -34,7 +34,8 @@
     "pdfkit": "^0.17.2",
     "resend": "^3.0.0",
     "stripe": "^14.11.0",
-    "validator": "^13.11.0"
+    "validator": "^13.11.0",
+    "whois-json": "^2.0.4"
   },
   "devDependencies": {
     "jest": "^30.3.0",
