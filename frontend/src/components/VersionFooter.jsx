@@ -73,7 +73,12 @@ const VersionFooter = ({ showFairUseModal, setShowFairUseModal }) => {
               Fair Use Policy
             </button>
             <span>•</span>
-            <a href="mailto:support@thatworkx.com" className="hover:text-white transition-colors">
+            <a 
+              href="https://thatworkx.com/contact" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
               Contact
             </a>
           </div>

@@ -22,10 +22,14 @@ AIOptimize uses five core analyzers to evaluate page performance:
 - **Pro Tier ($20/month or $180/year):** Unlimited analyses, PDF exports, analysis history, and site-level E-E-A-T analysis (up to 15 pages).
 - **Professional Services (From $1,500):** Expert implementation, comprehensive PDF audits, and dedicated AEO consultation.
 
-## 🏢 Publisher
+## 🏢 Publisher & Official Links
 **Thatworkx Solutions L.L.C-FZ**
-- **Website:** https://aeo.thatworkx.com
-- **Contact:** support@thatworkx.com
+- **Product Website:** https://aeo.thatworkx.com
+- **Corporate Website:** https://thatworkx.com
+- **Contact Form:** https://thatworkx.com/contact
+- **Support Email:** support@thatworkx.com
+- **Privacy Policy:** https://thatworkx.com/privacy-policy
+- **LinkedIn (About Us):** https://www.linkedin.com/company/thatworkx-solutions
 - **Identity:** Leading developer of AEO tools for the AI-first web.
 
 ---

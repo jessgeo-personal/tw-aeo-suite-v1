@@ -720,11 +720,13 @@ function addScoreBreakdownSection(doc, details) {
   const breakdownEntries = [];
   for (const [key, value] of Object.entries(breakdownData)) {
     if (value && typeof value === 'object' && 'score' in value && 'max' in value) {
-      // Convert camelCase to Title Case
+      // Format label (camelCase to Title Case)
       const label = key
-        .replace(/([A-Z])/g, ' $1')
+        .replace(/([A-Z]+)/g, ' $1')
+        .replace(/([A-Z][a-z])/g, ' $1')
+        .replace(/\s+/g, ' ')
         .replace(/^./, str => str.toUpperCase())
-        .trim();
+        .trim() + ':';
       
       breakdownEntries.push({
         label,
