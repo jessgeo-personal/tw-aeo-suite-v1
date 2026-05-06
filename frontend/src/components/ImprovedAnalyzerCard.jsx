@@ -160,7 +160,7 @@ const ImprovedAnalyzerCard = ({ analyzerKey, analyzerData, weight, hasError = fa
                     <div key={key} className="bg-dark-900 rounded-lg p-4 border border-dark-700">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-white capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                          {key.replace(/([A-Z]+)/g, ' $1').replace(/([A-Z][a-z])/g, ' $1').replace(/\s+/g, ' ').trim()}
                         </span>
                         <span className="text-lg font-bold text-white">
                           {value.score}/{value.max}
@@ -204,14 +204,14 @@ const ImprovedAnalyzerCard = ({ analyzerKey, analyzerData, weight, hasError = fa
                           )}
                           <div className="flex-1">
                             <h5 className="text-sm font-semibold text-white mb-2 capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                              {key.replace(/([A-Z]+)/g, ' $1').replace(/([A-Z][a-z])/g, ' $1').replace(/\s+/g, ' ').trim()}
                             </h5>
                             {value.details && typeof value.details === 'object' ? (
                               <div className="space-y-1 text-xs text-dark-400">
                                 {Object.entries(value.details).map(([detailKey, detailValue]) => (
                                   <div key={detailKey} className="flex justify-between items-center">
                                     <span className="capitalize">
-                                      {detailKey.replace(/([A-Z])/g, ' $1').trim()}:
+                                      {detailKey.replace(/([A-Z]+)/g, ' $1').replace(/([A-Z][a-z])/g, ' $1').replace(/\s+/g, ' ').trim()}:
                                     </span>
                                     <span className="font-mono font-semibold text-white">
                                       {typeof detailValue === 'boolean'

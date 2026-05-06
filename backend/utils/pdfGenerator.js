@@ -509,7 +509,9 @@ function addAnalyzerDetailPage(doc, analyzerName, analyzerKey, data, weight) {
         
         // Format label (camelCase to Title Case)
         const label = key
-          .replace(/([A-Z])/g, ' $1')
+          .replace(/([A-Z]+)/g, ' $1')
+          .replace(/([A-Z][a-z])/g, ' $1')
+          .replace(/\s+/g, ' ')
           .replace(/^./, str => str.toUpperCase())
           .trim() + ':';
         

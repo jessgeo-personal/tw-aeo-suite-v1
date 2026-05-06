@@ -62,7 +62,7 @@ describe('Site-Level EEAT Analyzer', () => {
 
     const result = await analyzeSiteLevelEEAT(domain);
     
-    expect(result.findings.trustSignals.details.hasVisibleEmail).toBe(true);
+    expect(result.findings.trustSignals.details.hasEmailVisibleToAI).toBe(true);
   });
 
   it('should handle WHOIS failure with a probabilistic ±10 point margin', async () => {

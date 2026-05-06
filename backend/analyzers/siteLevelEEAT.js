@@ -160,23 +160,24 @@ async function analyzeSiteLevelEEAT(domain) {
     const mainContent = $('body').text().toLowerCase();
     const jsonString = JSON.stringify(jsonLdBlocks).toLowerCase();
     
-    const emailRegex = /@[\w\-]+\.[\w]{2,}/gi;
+    // Use match with non-global regex or reset lastIndex to avoid state bugs in sequential tests
+    const emailRegex = /@[\w\-]+\.[\w]{2,}/i;
     const phoneRegex = /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
     
     const hasEmail = emailRegex.test(mainContent) || emailRegex.test(jsonString);
     const hasPhone = phoneRegex.test(mainContent) || phoneRegex.test(jsonString);
     
-    findings.trustSignals.details.hasVisibleEmail = hasEmail;
-    findings.trustSignals.details.hasVisiblePhone = hasPhone;
+    findings.trustSignals.details.hasEmailVisibleToAI = hasEmail;
+    findings.trustSignals.details.hasPhoneVisibleToAI = hasPhone;
     
     if (hasEmail) findings.trustSignals.score += 5;
     if (hasPhone) findings.trustSignals.score += 5;
     
     if (!hasEmail) {
       recommendations.push({
-        text: 'Display contact email prominently',
-        why: 'No visible email found in content or metadata. Transparent contact info is core to trustworthiness for AI engines.',
-        howToFix: 'Add business email to footer or JSON-LD schema (ContactPoint). Use real domain email, e.g., info@yourdomain.com.',
+        text: 'Make Contact Email Visible to AI',
+        why: 'No email found in content or metadata. AI engines verify trustworthiness by identifying accountable contact points.',
+        howToFix: 'Add your business email to your JSON-LD schema (Organization -> contactPoint) to ensure it is detectable by AI crawlers even if rendered by JavaScript.',
         priority: 'high'
       });
     }

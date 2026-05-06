@@ -19,10 +19,24 @@ const VersionFooter = ({ showFairUseModal, setShowFairUseModal }) => {
             <h3 className="text-white font-bold mb-4">Resources</h3>
             <ul className="space-y-2 text-sm text-dark-400">
               <li>
-                <a href="#features" className="hover:text-white transition-colors">Features</a>
+                <a 
+                  href="https://www.linkedin.com/company/thatworkx-solutions" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  About Us
+                </a>
               </li>
               <li>
-                <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
+                <a 
+                  href="https://thatworkx.com/privacy-policy" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  Privacy Policy
+                </a>
               </li>
             </ul>
           </div>
@@ -37,8 +51,13 @@ const VersionFooter = ({ showFairUseModal, setShowFairUseModal }) => {
                 </a>
               </li>
               <li>
-                <a href="https://thatworkx.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  thatworkx.com
+                <a 
+                  href="https://thatworkx.com/contact" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-white transition-colors"
+                >
+                  Contact Form
                 </a>
               </li>
             </ul>

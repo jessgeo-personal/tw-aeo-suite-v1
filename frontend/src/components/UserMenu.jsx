@@ -110,6 +110,27 @@ const UserMenu = ({ user, onLogout, onManageSubscription, onUpgrade }) => {
             </button>
           )}
 
+          {/* Links */}
+          <a
+            href="https://www.linkedin.com/company/thatworkx-solutions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-3 text-left text-sm text-dark-100 hover:bg-dark-700 transition-colors flex items-center gap-2 border-b border-dark-700"
+          >
+            <Info size={16} className="text-blue-500" />
+            About Us
+          </a>
+
+          <a
+            href="https://thatworkx.com/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-3 text-left text-sm text-dark-100 hover:bg-dark-700 transition-colors flex items-center gap-2 border-b border-dark-700"
+          >
+            <Award size={16} className="text-green-500" />
+            Privacy Policy
+          </a>
+
           {/* Logout */}
           <button
             onClick={() => {
