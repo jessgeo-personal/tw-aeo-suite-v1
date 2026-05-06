@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, Crown, ChevronDown, CreditCard, Sparkles } from 'lucide-react';
+import { User, LogOut, Crown, ChevronDown, CreditCard, Sparkles, Info, Award } from 'lucide-react';
 
 const UserMenu = ({ user, onLogout, onManageSubscription, onUpgrade }) => {
   const [isOpen, setIsOpen] = useState(false);
