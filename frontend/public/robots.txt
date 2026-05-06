@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /ai-context.md
+
+# Specific AI Agents
+User-agent: GPTBot
+Allow: /ai-context.md
+
+User-agent: ChatGPT-User
+Allow: /ai-context.md
+
+User-agent: Claude-Web
+Allow: /ai-context.md
+
+User-agent: PerplexityBot
+Allow: /ai-context.md
+
+Sitemap: https://aeo.thatworkx.com/sitemap.xml

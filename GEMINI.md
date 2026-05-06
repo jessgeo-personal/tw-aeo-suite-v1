@@ -63,6 +63,11 @@
 * **Documentation:** Auto-generate JSDoc for every new function.
 * **Testing:** Use Vitest for frontend and Jest for backend.
 * **Styling:** Follow the existing Tailwind utility patterns; do not introduce custom CSS files.
+* **AI-Forward Architecture (MANDATORY):** Every feature or content update MUST maintain "The Triple-Lock Parity":
+    1. **UI Parity:** Changes must be visible and accurate in the React frontend.
+    2. **Schema Parity:** Synchronize changes with JSON-LD `@graph` in `index.html`.
+    3. **Mirror Parity:** Update `frontend/public/ai-context.md` to reflect the latest state for AI crawlers.
+    *Goal: Zero friction for LLM ingestion and 100% citation accuracy.*
 
 ## 🔌 Linked MCP Servers (Refer to .gemini/settings.json)
 * **GitHub:** For PR management.
