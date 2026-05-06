@@ -15,8 +15,10 @@ import BotBlockingAlert from '../components/BotBlockingAlert';
 // At top with other imports
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import BillingManagement from '../components/BillingManagement';
+import useCanonical from '../hooks/useCanonical';
 
 const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
+  useCanonical('https://aeo.thatworkx.com/dashboard');
   const location = useLocation();
   const navigate = useNavigate();
   const { result: initialResult } = location.state || {};
@@ -132,7 +134,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
         <div className="text-center">
           <RefreshCw className="w-12 h-12 text-primary-500 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Redirecting...</h2>
-          <p className="text-dark-400 mb-6">No analysis data found. Returning to homepage.</p>
+          <p className="text-dark-400 mb-6">No analysis data found. Returning to the homepage.</p>
           <button
             onClick={() => navigate('/')}
             className="px-6 py-2 bg-dark-800 hover:bg-dark-700 text-white font-medium rounded-lg transition-colors border border-dark-700"
@@ -368,7 +370,7 @@ const Dashboard = ({ user: userProp, onLogout: onLogoutProp }) => {
             {/* URL */}
             <div className="flex items-center gap-2">
               <ExternalLink size={14} className="text-primary-500" />
-              <span className="text-gray-400">Analyzing:</span>
+              <span className="text-gray-400">Analyzing:...</span>
               <a 
                 href={url} 
                 target="_blank" 

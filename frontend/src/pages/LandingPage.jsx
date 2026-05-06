@@ -14,8 +14,10 @@ import VersionFooter from '../components/VersionFooter';
 // At top with other imports
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import BillingManagement from '../components/BillingManagement';
+import useCanonical from '../hooks/useCanonical';
 
 const LandingPage = ({ user, onUserUpdate, onLogout }) => {
+  useCanonical('https://aeo.thatworkx.com/');
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [keywords, setKeywords] = useState('');

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import useCanonical from '../hooks/useCanonical';
 
 const HistoryPage = () => {
+  useCanonical('https://aeo.thatworkx.com/history');
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const urlParam = queryParams.get('url');
